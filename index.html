@@ -186,6 +186,7 @@ tr:hover td{background:var(--bg2)}
   <button id="nPSS" class="pss-tab" style="display:none" onclick="showSec('peersupport',this)">Peer support calls</button>
   <button id="nRpt" style="display:none" onclick="showSec('reports',this)">Supervisor reports</button>
   <button id="nAdm" style="display:none" onclick="showSec('admin',this)">Manage PINs</button>
+  <button id="nImport" style="display:none" onclick="showSec('import',this)">Bulk import</button>
 </div>
 
 <div class="sec active" id="summary">
@@ -351,14 +352,14 @@ document.getElementById('todayStr').textContent = new Date().toLocaleDateString(
 
 const ROLES = {sup:'Supervisor',coun:'Counselor',pss:'Peer Specialist'};
 const BASE_USERS = [
-  {id:'herbert',name:'Herbert',role:'sup',initials:'HB',av:'av-sup'},
+  {id:'herbert',name:'Herbert Parsi',role:'sup',initials:'HP',av:'av-sup'},
   {id:'aditya',name:'Aditya',role:'sup',initials:'AD',av:'av-sup'},
   {id:'jerril',name:'Jerril',role:'sup',initials:'JR',av:'av-sup'},
   {id:'reja',name:'Reja',role:'sup',initials:'RE',av:'av-sup'},
-  {id:'chalia',name:'Chalia',role:'pss',initials:'CH',av:'av-pss'},
-  {id:'daron',name:'Daron',role:'pss',initials:'DA',av:'av-pss'},
+  {id:'chalia',name:'Chalia Perry',role:'pss',initials:'CP',av:'av-pss'},
+  {id:'daron',name:'Daron Mills',role:'pss',initials:'DM',av:'av-pss'},
 ];
-const DEFAULT_PINS = {herbert:'1111',aditya:'2222',jerril:'3333',reja:'4444',chalia:'5555',daron:'6666'};
+const DEFAULT_PINS = {herbert:'1111',aditya:'2222',jerril:'3333',reja:'4444',chalia:'5555',daron:'6666',herbert_parsi:'1111',aditya_radhakrishnan:'2222',chalia_perry:'5555',daron_mills:'6666'};
 
 let selUser=null, pin='', curUser=null, sent=[];
 let liveData = {users:[...BASE_USERS],pins:{},clients:[],attendance:[],behavioral:[],calls:[]};
@@ -401,41 +402,22 @@ async function writeDB(path, data) {
 async function initData() {
   const snap = await get(ref(db, 'dashboard/clients'));
   if (snap.exists() && snap.val()) return;
-  const ago = n => {const x=new Date();x.setDate(x.getDate()+n);return x.toISOString().slice(0,10);};
-  // Seed initial data
-  const usersObj = {};
-  BASE_USERS.forEach(u => usersObj[u.id] = u);
-  const clients = [
-    {id:'10042',name:'Marcus D.',counselor:'Herbert',admitted:'2025-11-10',lastAppt:ago(-2),nextAppt:ago(2),att:'green',urine:'no',lastScreen:ago(-2),notes:'Positive screen — opioids'},
-    {id:'10017',name:'Yolanda K.',counselor:'Herbert',admitted:'2025-09-03',lastAppt:ago(-1),nextAppt:ago(3),att:'green',urine:'no',lastScreen:ago(-1),notes:'2nd positive in 30 days'},
-    {id:'10031',name:'Tommy R.',counselor:'Herbert',admitted:'2026-01-15',lastAppt:ago(-16),nextAppt:'',att:'red',urine:'overdue',lastScreen:ago(-24),notes:'No contact 16 days'},
-    {id:'10058',name:'Darlene M.',counselor:'Herbert',admitted:'2025-08-22',lastAppt:ago(-3),nextAppt:ago(1),att:'green',urine:'overdue',lastScreen:ago(-19),notes:'Overdue screen'},
-    {id:'10009',name:'Jerome B.',counselor:'Herbert',admitted:'2025-12-01',lastAppt:ago(-13),nextAppt:'',att:'red',urine:'overdue',lastScreen:ago(-16),notes:'Suicidal ideation reported'},
-    {id:'10034',name:'Carlos V.',counselor:'Herbert',admitted:'2025-10-19',lastAppt:ago(-6),nextAppt:ago(1),att:'yellow',urine:'yes',lastScreen:ago(-6),notes:'Missed 1 session'},
-    {id:'10023',name:'Patricia H.',counselor:'Herbert',admitted:'2025-05-30',lastAppt:ago(-1),nextAppt:ago(2),att:'green',urine:'yes',lastScreen:ago(-12),notes:''},
-    {id:'10047',name:'Renee T.',counselor:'Herbert',admitted:'2026-02-10',lastAppt:ago(-3),nextAppt:ago(1),att:'yellow',urine:'yes',lastScreen:ago(-5),notes:'Behavioral incident'},
-    {id:'10011',name:'Sandra L.',counselor:'Herbert',admitted:'2025-04-12',lastAppt:ago(-2),nextAppt:ago(5),att:'green',urine:'yes',lastScreen:ago(-4),notes:''},
-  ];
-  const clientsObj = {};
-  clients.forEach(c => clientsObj[c.id] = c);
-  const behavioral = [
-    {id:'b1',clientId:'10009',date:ago(-3),type:'Safety Concern',desc:'Suicidal ideation during outreach call',followup:'Safety plan reviewed, EC notified',status:'open'},
-    {id:'b2',clientId:'10047',date:ago(-3),type:'Behavioral Incident',desc:'Verbal altercation with peer during group',followup:'Individual session scheduled',status:'open'},
-    {id:'b3',clientId:'10042',date:ago(-2),type:'Suspicion of Use',desc:'Slurred speech at check-in, positive confirmed',followup:'Clinical review',status:'open'},
-  ];
-  const behavObj = {};
-  behavioral.forEach(b => behavObj[b.id] = b);
-  const calls = [
-    {id:'PSS-001',clientId:'10031',clientName:'Tommy R.',counselor:'Herbert',specialist:'Chalia',date:ago(-4),type:'Outreach Call',method:'Voicemail',outcome:'No Answer',topic:'None',notes:'Attempt 1',action:'',status:'Open'},
-    {id:'PSS-002',clientId:'10009',clientName:'Jerome B.',counselor:'Herbert',specialist:'Chalia',date:ago(-3),type:'Crisis Follow-Up',method:'Completed',outcome:'Reached Client',topic:'Safety Check',notes:'Safety plan reviewed',action:'Referred to counselor',status:'Escalated'},
-    {id:'PSS-003',clientId:'10042',clientName:'Marcus D.',counselor:'Herbert',specialist:'Daron',date:ago(-1),type:'Post-Positive Screen',method:'Completed',outcome:'Reached Client',topic:'Peer Support',notes:'Discussed relapse',action:'Counselor notified',status:'Open'},
-  ];
-  const callsObj = {};
-  calls.forEach(c => callsObj[c.id] = c);
+  const supUsers = {
+    'herbert':{id:'herbert',name:'Herbert Parsi',role:'sup',initials:'HP',av:'av-sup'},
+    'aditya':{id:'aditya',name:'Aditya',role:'sup',initials:'AD',av:'av-sup'},
+    'jerril':{id:'jerril',name:'Jerril',role:'sup',initials:'JR',av:'av-sup'},
+    'reja':{id:'reja',name:'Reja',role:'sup',initials:'RE',av:'av-sup'},
+    'chalia':{id:'chalia',name:'Chalia Perry',role:'pss',initials:'CP',av:'av-pss'},
+    'daron':{id:'daron',name:'Daron Mills',role:'pss',initials:'DM',av:'av-pss'},
+  };
+  const counselorUsers = {"aditya_radhakrishnan":{"id":"aditya_radhakrishnan","name":"Aditya Radhakrishnan","role":"coun","initials":"AR","av":"av-coun"},"alleaf_c_thompson":{"id":"alleaf_c_thompson","name":"Alleaf C Thompson","role":"coun","initials":"AC","av":"av-coun"},"carmen_victor":{"id":"carmen_victor","name":"Carmen Victor","role":"coun","initials":"CV","av":"av-coun"},"chalia_perry":{"id":"chalia_perry","name":"Chalia Perry","role":"coun","initials":"CP","av":"av-coun"},"daron_mills":{"id":"daron_mills","name":"Daron Mills","role":"coun","initials":"DM","av":"av-coun"},"herbert_parsi":{"id":"herbert_parsi","name":"Herbert Parsi","role":"coun","initials":"HP","av":"av-coun"},"lisa_pagan":{"id":"lisa_pagan","name":"Lisa Pagan","role":"coun","initials":"LP","av":"av-coun"},"ruben_febres":{"id":"ruben_febres","name":"Ruben Febres","role":"coun","initials":"RF","av":"av-coun"},"rumika_daves":{"id":"rumika_daves","name":"Rumika Daves","role":"coun","initials":"RD","av":"av-coun"},"sravya_gummaluri":{"id":"sravya_gummaluri","name":"Sravya Gummaluri","role":"coun","initials":"SG","av":"av-coun"},"wanda_reeves":{"id":"wanda_reeves","name":"Wanda Reeves","role":"coun","initials":"WR","av":"av-coun"}};
+  const allUsers = Object.assign({}, supUsers, counselorUsers);
+  const allPins = Object.assign({}, DEFAULT_PINS, {"aditya_radhakrishnan":"2222","alleaf_c_thompson":"0000","carmen_victor":"0000","chalia_perry":"5555","daron_mills":"6666","herbert_parsi":"1111","lisa_pagan":"0000","ruben_febres":"0000","rumika_daves":"0000","sravya_gummaluri":"0000","wanda_reeves":"0000"});
+  const realClients = {"C0001":{"id":"C0001","name":"Sydnei Alexis","counselor":"Alleaf C Thompson","admitted":"2025-09-04","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient"},"14CIAL119671":{"id":"14CIAL119671","name":"CDivine Allah","counselor":"Wanda Reeves","admitted":"2024-08-20","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient - Relapse Prevention"},"C0003":{"id":"C0003","name":"Issachar Anderson","counselor":"Herbert Parsi","admitted":"2025-10-07","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient"},"C0004":{"id":"C0004","name":"Lisa Arnold","counselor":"Carmen Victor","admitted":"","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient"},"C0005":{"id":"C0005","name":"Darrick Ashburn","counselor":"Wanda Reeves","admitted":"2025-04-03","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient - Relapse Prevention"},"C0006":{"id":"C0006","name":"Nathan Baez","counselor":"Rumika Daves","admitted":"2025-12-08","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient"},"C0007":{"id":"C0007","name":"Island Baldwin","counselor":"Sravya Gummaluri","admitted":"2025-09-23","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient"},"C0008":{"id":"C0008","name":"Javan Banks","counselor":"Sravya Gummaluri","admitted":"2025-08-13","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Intensive Outpatient"},"C0009":{"id":"C0009","name":"Reginald Battle","counselor":"Wanda Reeves","admitted":"","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Intensive Outpatient"},"C0010":{"id":"C0010","name":"Darius Beckett","counselor":"Wanda Reeves","admitted":"2025-12-03","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient"},"C0011":{"id":"C0011","name":"Sayvon Bennett","counselor":"Carmen Victor","admitted":"2025-10-30","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient"},"C0012":{"id":"C0012","name":"Nalsun Bethea","counselor":"Herbert Parsi","admitted":"2026-01-28","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Intensive Outpatient"},"C0013":{"id":"C0013","name":"Issac Bivens","counselor":"Carmen Victor","admitted":"2025-12-22","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient"},"C0014":{"id":"C0014","name":"Rajaughn Bowser","counselor":"Wanda Reeves","admitted":"2025-09-24","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient"},"13ROBW231886":{"id":"13ROBW231886","name":"Rhoda Bowser","counselor":"Carmen Victor","admitted":"2024-08-16","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient - Relapse Prevention"},"C0016":{"id":"C0016","name":"Dwayne Bozarth","counselor":"Rumika Daves","admitted":"2026-02-04","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Intensive Outpatient"},"C0017":{"id":"C0017","name":"Dontay Brannon","counselor":"Rumika Daves","admitted":"2025-10-22","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient - Relapse Prevention"},"C0018":{"id":"C0018","name":"Kevin Brooks","counselor":"Wanda Reeves","admitted":"2025-06-05","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Intensive Outpatient"},"C0019":{"id":"C0019","name":"Gerald Brown","counselor":"Lisa Pagan","admitted":"2025-12-10","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Intensive Outpatient"},"C0020":{"id":"C0020","name":"Tashaun Bryant","counselor":"Wanda Reeves","admitted":"2026-02-09","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Intensive Outpatient"},"C0021":{"id":"C0021","name":"Pamela Bush-Allen","counselor":"Wanda Reeves","admitted":"","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient"},"C0022":{"id":"C0022","name":"Walter Calcese","counselor":"Rumika Daves","admitted":"2026-01-16","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Intensive Outpatient"},"C0023":{"id":"C0023","name":"Sara Carchipulla","counselor":"Ruben Febres","admitted":"2025-03-14","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient"},"C0024":{"id":"C0024","name":"Elder Castanaza","counselor":"Ruben Febres","admitted":"2026-01-29","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient"},"C0025":{"id":"C0025","name":"Abel Cherian","counselor":"Herbert Parsi","admitted":"2026-01-09","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient"},"C0026":{"id":"C0026","name":"Cha Chung","counselor":"Rumika Daves","admitted":"2026-03-10","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient"},"C0027":{"id":"C0027","name":"Altecia Clark","counselor":"Wanda Reeves","admitted":"2026-02-05","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Intensive Outpatient"},"15KVCA109969":{"id":"15KVCA109969","name":"Kevin Clark","counselor":"Wanda Reeves","admitted":"2024-07-25","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Intensive Outpatient"},"C0029":{"id":"C0029","name":"Clyde Cox","counselor":"Rumika Daves","admitted":"2026-03-03","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Intensive Outpatient"},"C0030":{"id":"C0030","name":"Bernisha Crosby","counselor":"Wanda Reeves","admitted":"2025-09-09","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Intensive Outpatient"},"08TRCO292959":{"id":"08TRCO292959","name":"Terri Crowley","counselor":"Carmen Victor","admitted":"2024-10-29","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient"},"C0032":{"id":"C0032","name":"Parrish Daniels","counselor":"Herbert Parsi","admitted":"","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Intensive Outpatient"},"C0033":{"id":"C0033","name":"Ryan Delonas","counselor":"Aditya Radhakrishnan","admitted":"","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Medication Management Only"},"C0034":{"id":"C0034","name":"Luis Echevarria","counselor":"Ruben Febres","admitted":"2026-02-02","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient"},"C0035":{"id":"C0035","name":"Vairo Edward","counselor":"Aditya Radhakrishnan","admitted":"","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Medication Management Only"},"C0036":{"id":"C0036","name":"William Elser","counselor":"Sravya Gummaluri","admitted":"2025-08-19","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Intensive Outpatient"},"C0037":{"id":"C0037","name":"Ainsley Evans","counselor":"Aditya Radhakrishnan","admitted":"","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Medication Management Only"},"C0038":{"id":"C0038","name":"Ronald Fanning","counselor":"Sravya Gummaluri","admitted":"2025-11-19","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Intensive Outpatient"},"C0039":{"id":"C0039","name":"Andrew Feole","counselor":"Lisa Pagan","admitted":"2026-03-12","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient"},"C0040":{"id":"C0040","name":"Edward Fleming","counselor":"Wanda Reeves","admitted":"2025-04-23","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient"},"C0041":{"id":"C0041","name":"Alan Garcia-Del Castillo","counselor":"Ruben Febres","admitted":"2025-12-11","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient"},"C0042":{"id":"C0042","name":"Rodney Glenn","counselor":"Rumika Daves","admitted":"2026-01-14","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Intensive Outpatient"},"C0043":{"id":"C0043","name":"Anthony Goodwin","counselor":"Herbert Parsi","admitted":"2026-02-19","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient"},"C0044":{"id":"C0044","name":"Anne Grant","counselor":"Carmen Victor","admitted":"2025-12-19","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient"},"C0045":{"id":"C0045","name":"Ronald Green","counselor":"Rumika Daves","admitted":"","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient"},"C0046":{"id":"C0046","name":"Oscar Guadalupe Vargas","counselor":"Ruben Febres","admitted":"2026-01-30","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient"},"C0047":{"id":"C0047","name":"David Hagadorn","counselor":"Alleaf C Thompson","admitted":"2025-09-02","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Intensive Outpatient"},"C0048":{"id":"C0048","name":"Robert Hall","counselor":"Lisa Pagan","admitted":"2025-12-10","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient"},"C0049":{"id":"C0049","name":"Timothy Harrell","counselor":"Wanda Reeves","admitted":"2025-12-29","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Intensive Outpatient"},"C0050":{"id":"C0050","name":"Mark Harris","counselor":"Carmen Victor","admitted":"2024-05-22","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient - Relapse Prevention"},"C0051":{"id":"C0051","name":"Jermane Harrison","counselor":"Carmen Victor","admitted":"2026-01-27","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient"},"14ATHS180267":{"id":"14ATHS180267","name":"Anthony Haskins","counselor":"Carmen Victor","admitted":"2024-06-26","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient - Relapse Prevention"},"C0053":{"id":"C0053","name":"Carleigh Hendrickson","counselor":"Sravya Gummaluri","admitted":"2025-10-24","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Intensive Outpatient"},"C0054":{"id":"C0054","name":"3rd Holman","counselor":"Chalia Perry","admitted":"2026-01-07","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Intensive Outpatient"},"C0055":{"id":"C0055","name":"Shaun Houston","counselor":"Daron Mills","admitted":"2025-10-08","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Intensive Outpatient"},"C0056":{"id":"C0056","name":"Davon Huewitt","counselor":"Herbert Parsi","admitted":"2025-06-25","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient - Relapse Prevention"},"C0057":{"id":"C0057","name":"John Ippoliti","counselor":"Carmen Victor","admitted":"2025-08-13","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient - Relapse Prevention"},"C0058":{"id":"C0058","name":"Christopher Jackson","counselor":"Wanda Reeves","admitted":"2026-03-13","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient"},"C0059":{"id":"C0059","name":"Mark James","counselor":"Carmen Victor","admitted":"2025-12-18","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Intensive Outpatient"},"C0060":{"id":"C0060","name":"Najee Jamison","counselor":"Carmen Victor","admitted":"2025-08-05","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient"},"C0061":{"id":"C0061","name":"William Jenkins","counselor":"Rumika Daves","admitted":"","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Intensive Outpatient"},"C0062":{"id":"C0062","name":"Qayshine Johenkins","counselor":"Lisa Pagan","admitted":"2025-12-11","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Intensive Outpatient"},"14KRJH113189":{"id":"14KRJH113189","name":"Kurtis Johnson","counselor":"Carmen Victor","admitted":"2024-09-12","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Intensive Outpatient"},"C0064":{"id":"C0064","name":"Rashon Johnson","counselor":"Lisa Pagan","admitted":"","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":""},"C0065":{"id":"C0065","name":"Reo Johnson","counselor":"Sravya Gummaluri","admitted":"","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Intensive Outpatient"},"C0066":{"id":"C0066","name":"Theresa Johnson-Jones","counselor":"Carmen Victor","admitted":"2025-08-26","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Intensive Outpatient"},"C0067":{"id":"C0067","name":"Mike Joseph","counselor":"Wanda Reeves","admitted":"2025-11-03","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient - Relapse Prevention"},"C0068":{"id":"C0068","name":"Jose Landaverde","counselor":"Wanda Reeves","admitted":"2026-02-26","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Intensive Outpatient"},"C0069":{"id":"C0069","name":"Dyquise Leonard","counselor":"Herbert Parsi","admitted":"2026-03-16","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Intensive Outpatient"},"C0070":{"id":"C0070","name":"Iman Lively","counselor":"Wanda Reeves","admitted":"2025-08-29","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient"},"C0071":{"id":"C0071","name":"Matthew Lowe","counselor":"Carmen Victor","admitted":"2025-11-06","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Intensive Outpatient"},"58CRLC195071":{"id":"58CRLC195071","name":"Carlos Luciano","counselor":"Carmen Victor","admitted":"2024-02-19","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient - Relapse Prevention"},"C0073":{"id":"C0073","name":"Patricia Martin-Cruser","counselor":"Rumika Daves","admitted":"2026-03-09","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient"},"C0074":{"id":"C0074","name":"Deondre Mathis","counselor":"Wanda Reeves","admitted":"2025-06-09","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Intensive Outpatient"},"C0075":{"id":"C0075","name":"Maurice McClinton","counselor":"Herbert Parsi","admitted":"2026-02-12","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient"},"18RCMI191260":{"id":"18RCMI191260","name":"Richard McIntosh","counselor":"Alleaf C Thompson","admitted":"2024-07-30","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Intensive Outpatient"},"14TRMR104293":{"id":"14TRMR104293","name":"Tyree McRae","counselor":"Wanda Reeves","admitted":"2024-06-11","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient"},"C0078":{"id":"C0078","name":"Armani Mendez","counselor":"Carmen Victor","admitted":"2026-01-20","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient"},"C0079":{"id":"C0079","name":"Derrick Miller","counselor":"Rumika Daves","admitted":"2026-02-23","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Intensive Outpatient"},"C0080":{"id":"C0080","name":"Thaddeus Monroe","counselor":"Carmen Victor","admitted":"2026-03-04","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Intensive Outpatient"},"C0081":{"id":"C0081","name":"Leonardo Morales Mejia","counselor":"Ruben Febres","admitted":"2025-12-12","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient"},"C0082":{"id":"C0082","name":"Minnie Mouse","counselor":"Aditya Radhakrishnan","admitted":"2025-05-12","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":""},"C0083":{"id":"C0083","name":"Perla Nunez","counselor":"Ruben Febres","admitted":"2025-12-09","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient"},"C0084":{"id":"C0084","name":"Jarrett Palmer","counselor":"Alleaf C Thompson","admitted":"2024-12-12","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Intensive Outpatient"},"C0085":{"id":"C0085","name":"Fernando Pena","counselor":"Sravya Gummaluri","admitted":"2025-11-19","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient"},"C0086":{"id":"C0086","name":"Ramon Perez","counselor":"Rumika Daves","admitted":"2025-11-13","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient"},"C0087":{"id":"C0087","name":"Jessica Perry","counselor":"Carmen Victor","admitted":"2024-12-02","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient - Relapse Prevention"},"C0088":{"id":"C0088","name":"Veronique Pettigrew","counselor":"Rumika Daves","admitted":"","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient"},"14MWPN138873":{"id":"14MWPN138873","name":"Mawulda Pinkston","counselor":"Wanda Reeves","admitted":"2024-08-23","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient"},"C0090":{"id":"C0090","name":"Michael Piscopo","counselor":"Aditya Radhakrishnan","admitted":"2025-11-03","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Medication Management Only"},"C0091":{"id":"C0091","name":"Willie Powell","counselor":"Carmen Victor","admitted":"2025-03-31","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient"},"C0092":{"id":"C0092","name":"Rayshawn Rambough","counselor":"Chalia Perry","admitted":"2025-09-18","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient"},"C0093":{"id":"C0093","name":"Shannon Reeves","counselor":"Alleaf C Thompson","admitted":"2025-10-09","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient - Relapse Prevention"},"C0094":{"id":"C0094","name":"Elvis Reyes","counselor":"Rumika Daves","admitted":"2024-03-24","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient"},"C0095":{"id":"C0095","name":"Marvin Reyes Escobar","counselor":"Ruben Febres","admitted":"2026-02-18","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":""},"C0096":{"id":"C0096","name":"Shawn Richardson","counselor":"Sravya Gummaluri","admitted":"2026-01-06","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient"},"C0097":{"id":"C0097","name":"Joseph Ricks","counselor":"Rumika Daves","admitted":"2025-01-13","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Intensive Outpatient"},"C0098":{"id":"C0098","name":"Dancy Rivera","counselor":"Ruben Febres","admitted":"2025-12-18","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient"},"C0099":{"id":"C0099","name":"Thomas Rogers","counselor":"Carmen Victor","admitted":"2025-10-09","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Intensive Outpatient"},"C0100":{"id":"C0100","name":"Whymair Rogers","counselor":"Aditya Radhakrishnan","admitted":"2024-09-11","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient"},"C0101":{"id":"C0101","name":"Anthony Rosario","counselor":"Wanda Reeves","admitted":"2025-10-02","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient"},"C0102":{"id":"C0102","name":"Anthony Roselle","counselor":"Alleaf C Thompson","admitted":"2025-09-15","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Medication Management Only"},"C0103":{"id":"C0103","name":"Jonoll Ross","counselor":"Carmen Victor","admitted":"2025-10-14","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Intensive Outpatient"},"C0104":{"id":"C0104","name":"Derrick Rossi","counselor":"Rumika Daves","admitted":"2025-12-22","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient"},"C0105":{"id":"C0105","name":"Kendall Rossi","counselor":"Herbert Parsi","admitted":"2026-02-05","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient"},"C0106":{"id":"C0106","name":"Rowan Sackstein","counselor":"Lisa Pagan","admitted":"2026-03-05","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient"},"C0107":{"id":"C0107","name":"Manuel Santos","counselor":"Ruben Febres","admitted":"2025-10-30","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient"},"C0108":{"id":"C0108","name":"Martin Saquic Hernandez","counselor":"Ruben Febres","admitted":"2025-09-26","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient"},"C0109":{"id":"C0109","name":"Aaron Sargo","counselor":"Herbert Parsi","admitted":"2026-01-22","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Intensive Outpatient"},"C0110":{"id":"C0110","name":"Elie Shaby","counselor":"Aditya Radhakrishnan","admitted":"","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Medication Management Only"},"C0111":{"id":"C0111","name":"Ahsan Shaikh","counselor":"Rumika Daves","admitted":"2025-09-10","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Intensive Outpatient"},"14LNSA262300":{"id":"14LNSA262300","name":"Lenaya Shaw","counselor":"Carmen Victor","admitted":"2024-09-16","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient"},"C0113":{"id":"C0113","name":"Chad Silla","counselor":"Wanda Reeves","admitted":"2025-04-10","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Intensive Outpatient"},"C0114":{"id":"C0114","name":"James Slater","counselor":"Rumika Daves","admitted":"2026-03-10","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient"},"C0115":{"id":"C0115","name":"Dylan Smith","counselor":"Carmen Victor","admitted":"2024-12-26","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Urine Screen Only"},"C0116":{"id":"C0116","name":"Kameron Smith","counselor":"Chalia Perry","admitted":"2026-01-06","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient"},"C0117":{"id":"C0117","name":"Shane Southard","counselor":"Wanda Reeves","admitted":"2025-11-10","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient"},"C0118":{"id":"C0118","name":"Corey Spruill","counselor":"Rumika Daves","admitted":"2026-02-05","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient"},"C0119":{"id":"C0119","name":"Anthony Stephens","counselor":"Carmen Victor","admitted":"2025-10-16","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient"},"C0120":{"id":"C0120","name":"John Stewart","counselor":"Carmen Victor","admitted":"2025-04-22","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient - Relapse Prevention"},"C0121":{"id":"C0121","name":"Norman Suggs","counselor":"Herbert Parsi","admitted":"2025-03-31","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Intensive Outpatient"},"C0122":{"id":"C0122","name":"Diane Sullivan","counselor":"Carmen Victor","admitted":"2025-12-30","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Intensive Outpatient"},"C0123":{"id":"C0123","name":"Pete Talevi","counselor":"Lisa Pagan","admitted":"2026-03-12","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient"},"C0124":{"id":"C0124","name":"Nahshawn Thomas","counselor":"Chalia Perry","admitted":"2026-02-25","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Intensive Outpatient"},"C0125":{"id":"C0125","name":"Eric Toothman","counselor":"Carmen Victor","admitted":"2025-06-06","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Medication Management Only"},"C0126":{"id":"C0126","name":"Gregory Upshur","counselor":"Lisa Pagan","admitted":"2025-12-29","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient"},"C0127":{"id":"C0127","name":"Collin Vance","counselor":"Wanda Reeves","admitted":"2025-09-04","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient"},"C0128":{"id":"C0128","name":"Carolyn Vazquez","counselor":"Carmen Victor","admitted":"2025-12-11","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Intensive Outpatient"},"C0129":{"id":"C0129","name":"Joaquin Vazquez","counselor":"Ruben Febres","admitted":"2025-10-31","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Intensive Outpatient"},"C0130":{"id":"C0130","name":"Rushaun Wade","counselor":"Rumika Daves","admitted":"2025-11-21","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Intensive Outpatient"},"C0131":{"id":"C0131","name":"Curtis Walker","counselor":"Chalia Perry","admitted":"2026-02-25","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Intensive Outpatient"},"C0132":{"id":"C0132","name":"Michael Walukiewicz","counselor":"Herbert Parsi","admitted":"2025-08-25","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient"},"C0133":{"id":"C0133","name":"Siani Warren","counselor":"Alleaf C Thompson","admitted":"2024-08-15","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient"},"C0134":{"id":"C0134","name":"Dustin Wetzel","counselor":"Herbert Parsi","admitted":"2025-07-16","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient"},"C0135":{"id":"C0135","name":"Nathaniel Whetstone","counselor":"Rumika Daves","admitted":"2026-02-13","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Intensive Outpatient"},"C0136":{"id":"C0136","name":"Shemar Whitfield","counselor":"Wanda Reeves","admitted":"2025-12-04","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Intensive Outpatient"},"C0137":{"id":"C0137","name":"Leroy Wilkins","counselor":"Wanda Reeves","admitted":"2025-04-10","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient"},"C0138":{"id":"C0138","name":"Latoya Williams","counselor":"Herbert Parsi","admitted":"2025-10-31","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient"},"C0139":{"id":"C0139","name":"Reginald Williams","counselor":"Rumika Daves","admitted":"2025-05-23","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient"},"C0140":{"id":"C0140","name":"Tyreek Williams","counselor":"Chalia Perry","admitted":"2025-07-02","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Outpatient"},"C0141":{"id":"C0141","name":"Sean Wilson","counselor":"Carmen Victor","admitted":"2026-02-17","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Intensive Outpatient"},"C0142":{"id":"C0142","name":"Gerald Worrell","counselor":"Herbert Parsi","admitted":"2025-06-13","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Intensive Outpatient"},"C0143":{"id":"C0143","name":"Joseph Yeager","counselor":"Herbert Parsi","admitted":"2026-01-22","lastAppt":"","nextAppt":"","att":"green","urine":"yes","lastScreen":"","notes":"Intensive Outpatient"}};
   await set(ref(db, 'dashboard'), {
-    users: usersObj, pins: DEFAULT_PINS,
-    clients: clientsObj, behavioral: behavObj,
-    calls: callsObj, attendance: {}
+    users: allUsers, pins: allPins,
+    clients: realClients,
+    behavioral: {}, calls: {}, attendance: {}
   });
 }
 
@@ -620,6 +602,7 @@ function applyRole(){
   document.getElementById('topName').textContent=curUser.name;
   document.getElementById('nRpt').style.display=r==='sup'?'':'none';
   document.getElementById('nAdm').style.display=r==='sup'?'':'none';
+  document.getElementById('nImport').style.display=r==='sup'?'':'none';
   document.getElementById('nPSS').style.display=r==='pss'?'':'none';
   document.getElementById('nAdd').style.display=r==='pss'?'none':'';
   document.getElementById('nAtt').style.display=r==='pss'?'none':'';
@@ -631,6 +614,167 @@ function applyRole(){
 ['ad','bd','pdate','fa2'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=todayISO;});
 initData();
 
+
+
+// ── BULK IMPORT ───────────────────────────────────────────────────────────────
+let parsedClients = [];
+
+function downloadTemplate() {
+  const headers = ['id','name','counselor','admitted','lastAppt','nextAppt','att','urine','lastScreen','notes'];
+  const example = ['10001','Client Name','Counselor Name','2025-01-15','2026-03-10','2026-03-17','green','yes','2026-03-10','Notes here'];
+  const csv = [headers.join(','), example.join(',')].join('\n');
+  const blob = new Blob([csv], {type:'text/csv'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'client_import_template.csv';
+  a.click();
+}
+
+function parseCSV(text) {
+  const lines = text.trim().split('\n').map(l => l.trim()).filter(l => l);
+  if (lines.length < 2) return {headers:[], rows:[], error:'File appears empty.'};
+  const headers = lines[0].split(',').map(h => h.trim().replace(/['"]/g,'').toLowerCase());
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    const vals = smartSplit(lines[i]);
+    const row = {};
+    headers.forEach((h, j) => row[h] = (vals[j] || '').trim().replace(/^["']|["']$/g,''));
+    rows.push(row);
+  }
+  return {headers, rows, error: null};
+}
+
+function smartSplit(line) {
+  const result = []; let current = ''; let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') { inQuotes = !inQuotes; }
+    else if (ch === ',' && !inQuotes) { result.push(current); current = ''; }
+    else current += ch;
+  }
+  result.push(current);
+  return result;
+}
+
+function validateClient(row, idx, counselors) {
+  const errors = [];
+  if (!row.id) errors.push('Row '+(idx+2)+': missing client ID');
+  if (!row.name) errors.push('Row '+(idx+2)+': missing client name');
+  if (!row.counselor) errors.push('Row '+(idx+2)+': missing counselor');
+  if (row.att && !['green','yellow','red',''].includes(row.att.toLowerCase()))
+    errors.push('Row '+(idx+2)+': att must be green, yellow, or red');
+  if (row.urine && !['yes','no','overdue',''].includes(row.urine.toLowerCase()))
+    errors.push('Row '+(idx+2)+': urine must be yes, no, or overdue');
+  return errors;
+}
+
+function previewCSV(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const {headers, rows, error} = parseCSV(e.target.result);
+    if (error) { showCSVError(error); return; }
+    const required = ['id','name','counselor'];
+    const missing = required.filter(r => !headers.includes(r));
+    if (missing.length) { showCSVError('Missing required columns: ' + missing.join(', ')); return; }
+
+    const counselors = getCounselors().map(c => c.name.toLowerCase());
+    const allErrors = [];
+    const valid = [];
+    const existingIds = (liveData.clients||[]).map(c => c.id);
+
+    rows.forEach((row, i) => {
+      const errs = validateClient(row, i, counselors);
+      if (errs.length) { allErrors.push(...errs); return; }
+      valid.push({
+        id: row.id,
+        name: row.name,
+        counselor: row.counselor,
+        admitted: row.admitted || '',
+        lastAppt: row.lastappt || row.lastAppt || '',
+        nextAppt: row.nextappt || row.nextAppt || '',
+        att: (row.att || 'green').toLowerCase(),
+        urine: (row.urine || 'yes').toLowerCase(),
+        lastScreen: row.lastscreen || row.lastScreen || '',
+        notes: row.notes || ''
+      });
+    });
+
+    parsedClients = valid;
+    const errDiv = document.getElementById('csvErrors');
+    if (allErrors.length) {
+      errDiv.innerHTML = '<div style="background:var(--bgd);color:var(--txd);padding:8px 12px;border-radius:var(--r);margin-bottom:8px">'+allErrors.map(e=>'⚠ '+e).join('<br>')+'</div>';
+    } else {
+      errDiv.innerHTML = '';
+    }
+
+    const dupes = valid.filter(c => existingIds.includes(c.id));
+    document.getElementById('csvPreviewTitle').textContent =
+      valid.length + ' clients ready to import' +
+      (dupes.length ? ' — ' + dupes.length + ' will overwrite existing records' : '') +
+      (allErrors.length ? ' (' + allErrors.length + ' rows skipped due to errors)' : '');
+
+    const thead = '<tr><th>#</th><th>ID</th><th>Name</th><th>Counselor</th><th>Admitted</th><th>Last appt</th><th>Next appt</th><th>Attendance</th><th>Screen</th><th>Notes</th></tr>';
+    const tbody = valid.map((c,i) => {
+      const attColor = c.att==='red'?'r':c.att==='yellow'?'y':'g';
+      const urineColor = c.urine==='yes'?'g':'r';
+      return `<tr>
+        <td>${i+1}</td><td>${c.id}</td><td style="font-weight:700">${c.name}</td><td>${c.counselor}</td>
+        <td>${c.admitted||'—'}</td><td>${c.lastAppt||'—'}</td><td>${c.nextAppt||'—'}</td>
+        <td><span class="b ${attColor}">${c.att}</span></td>
+        <td><span class="b ${urineColor}">${c.urine}</span></td>
+        <td>${c.notes||'—'}</td>
+      </tr>`;
+    }).join('');
+    document.getElementById('previewTable').innerHTML = thead + tbody;
+    document.getElementById('csvPreview').style.display = 'block';
+    document.getElementById('importBtn').disabled = valid.length === 0;
+  };
+  reader.readAsText(file);
+}
+
+function showCSVError(msg) {
+  document.getElementById('csvErrors').innerHTML = '<div style="background:var(--bgd);color:var(--txd);padding:8px 12px;border-radius:var(--r)">' + msg + '</div>';
+  document.getElementById('csvPreview').style.display = 'block';
+  document.getElementById('previewTable').innerHTML = '';
+  document.getElementById('csvPreviewTitle').textContent = 'Error reading file';
+}
+
+async function importClients() {
+  if (!parsedClients.length) return;
+  const btn = document.getElementById('importBtn');
+  const status = document.getElementById('importStatus');
+  btn.disabled = true;
+  btn.textContent = 'Importing...';
+  let count = 0;
+  for (const c of parsedClients) {
+    await writeDB('clients/' + c.id, c);
+    count++;
+    status.textContent = count + ' of ' + parsedClients.length + ' imported...';
+  }
+  btn.textContent = 'Import all clients to database';
+  btn.disabled = false;
+  status.textContent = '';
+  clearImport();
+  sn(count + ' clients imported successfully — all users can see them now.', 'ok');
+}
+
+function clearImport() {
+  document.getElementById('csvPreview').style.display = 'none';
+  document.getElementById('csvFile').value = '';
+  document.getElementById('previewTable').innerHTML = '';
+  document.getElementById('csvErrors').innerHTML = '';
+  parsedClients = [];
+}
+
+async function clearAllClients() {
+  if (!confirm('This will permanently delete ALL clients from the database. Are you sure?')) return;
+  if (!confirm('Are you absolutely sure? This cannot be undone.')) return;
+  await set(ref(db, 'dashboard/clients'), null);
+  sn('All clients cleared from database.', 'ok');
+}
+
 // Make functions available globally
 window.goBack=goBack;window.pk=pk;window.pdel=pdel;
 window.showSec=showSec;window.showSP=showSP;
@@ -641,6 +785,11 @@ window.renderClients=renderClients;window.renderPLog=renderPLog;
 window.loadFC=loadFC;window.loadRpt=loadRpt;window.sD=sD;window.sR=sR;window.cE=cE;
 window.renderAdmin=renderAdmin;window.savePin=savePin;window.addUser=addUser;
 window.logout=logout;
+window.downloadTemplate=downloadTemplate;
+window.previewCSV=previewCSV;
+window.importClients=importClients;
+window.clearImport=clearImport;
+window.clearAllClients=clearAllClients;
 </script>
 </body>
 </html>
