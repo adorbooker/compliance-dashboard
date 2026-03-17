@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Compliance & Peer Support Dashboard</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#ffffff;--bg2:#f5f6fa;--bg3:#eef0f5;
+  --bgi:#e8f0fe;--bgd:#fdecea;--bgs:#eafaf1;--bgw:#fef9e7;
+  --tx:#1a1a2e;--tx2:#6b7280;--tx3:#9ca3af;
+  --txi:#1a56db;--txd:#c0392b;--txs:#1e8449;--txw:#b7770d;
+  --bdr:rgba(0,0,0,0.1);--bdr2:rgba(0,0,0,0.18);
+  --bdri:#1a56db;--bdrd:#c0392b;--bdrs:#1e8449;
+  --r:8px;--rl:12px;
+  --font:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;
+}
+body{font-family:var(--font);background:var(--bg3);color:var(--tx)}
+input,select,textarea{font-family:var(--font);font-size:13px;border:0.5px solid var(--bdr2);border-radius:var(--r);padding:7px 10px;background:var(--bg);color:var(--tx);width:100%}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--bdri)}
+button{font-family:var(--font);font-size:12px;cursor:pointer;border:0.5px solid var(--bdr2);background:var(--bg);color:var(--tx2);border-radius:var(--r);padding:6px 14px}
+button:hover{background:var(--bg2)}button:active{transform:scale(.98)}
+.wrap{padding:.75rem;max-width:1300px;margin:0 auto}
+.login-screen{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem 1rem;background:var(--bg3)}
+.lcard{background:var(--bg);border:0.5px solid var(--bdr);border-radius:var(--rl);padding:1.75rem;width:100%;max-width:390px}
+.llogo{text-align:center;margin-bottom:1.25rem}
+.llogo .org{font-size:16px;font-weight:700;color:var(--tx)}
+.llogo .sub{font-size:11px;color:var(--tx2);margin-top:3px}
+.lstep{display:none}.lstep.active{display:block}
+.grp-lbl{font-size:10px;font-weight:700;color:var(--tx2);text-transform:uppercase;letter-spacing:.05em;padding:8px 0 4px}
+.ulist{display:flex;flex-direction:column;gap:5px;max-height:340px;overflow-y:auto;margin-bottom:1rem}
+.ubtn{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:var(--r);border:0.5px solid var(--bdr2);background:var(--bg);cursor:pointer;text-align:left;width:100%}
+.ubtn:hover{background:var(--bg2)}
+.av{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+.av-sup{background:var(--bgi);color:var(--txi)}.av-coun{background:var(--bgs);color:var(--txs)}.av-pss{background:#EAD6F7;color:#6C3483}
+.uname{font-size:13px;font-weight:700;color:var(--tx)}.urole{font-size:11px;color:var(--tx2)}
+.pin-dots{display:flex;gap:12px;justify-content:center;margin:1.25rem 0 .75rem}
+.pd{width:14px;height:14px;border-radius:50%;border:2px solid var(--bdr2);background:transparent;transition:background .1s}
+.pd.on{background:var(--tx);border-color:var(--tx)}.pd.err{background:#e24b4a;border-color:#e24b4a}
+.ppad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:.75rem}
+.pk{padding:14px;border-radius:var(--r);border:0.5px solid var(--bdr2);background:var(--bg);font-size:17px;font-weight:700;cursor:pointer;text-align:center;color:var(--tx)}
+.pk:hover{background:var(--bg2)}.pk:active{transform:scale(.95)}
+.pk.empty{border:none;background:transparent;cursor:default}.pk.del{font-size:13px;color:var(--tx2)}
+.perr{font-size:12px;color:var(--txd);text-align:center;min-height:18px;margin-bottom:6px}
+.back-btn{font-size:12px;color:var(--tx2);background:none;border:none;cursor:pointer;padding:4px 0;display:flex;align-items:center;gap:4px;margin-bottom:8px}
+.syncbar{padding:6px;text-align:center;font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px}
+.syncbar.connecting{background:#e8f0fe;color:#1a56db}
+.syncbar.live{background:#eafaf1;color:#1e8449}
+.syncbar.error{background:#fdecea;color:#c0392b}
+.syncdot{width:8px;height:8px;border-radius:50%;background:currentColor;animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:.75rem 1rem;background:var(--bg);border:0.5px solid var(--bdr);border-radius:var(--rl);margin-bottom:.75rem;flex-wrap:wrap;gap:8px}
+.topbar h1{font-size:15px;font-weight:700;color:var(--tx)}
+.tsub{font-size:11px;color:var(--tx2)}
+.tright{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.rbadge{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:700}
+.rb-sup{background:var(--bgi);color:var(--txi)}.rb-coun{background:var(--bgs);color:var(--txs)}.rb-pss{background:#EAD6F7;color:#6C3483}
+.livetag{font-size:11px;color:var(--txs);display:flex;align-items:center;gap:4px;font-weight:600}
+.livedot{width:7px;height:7px;border-radius:50%;background:var(--txs);animation:pulse 2s infinite}
+.nav{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:.75rem}
+.nav button{font-size:12px;padding:6px 12px;white-space:nowrap}
+.nav button.active{background:var(--bgi);color:var(--txi);border-color:var(--bdri)}
+.nav button.pss-tab.active{background:#EAD6F7;color:#6C3483;border-color:#A569BD}
+.sec{display:none}.sec.active{display:block}
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-bottom:.75rem}
+.metric{background:var(--bg2);border-radius:var(--r);padding:11px 13px}
+.metric .ml{font-size:11px;color:var(--tx2);margin-bottom:3px}
+.metric .mv{font-size:21px;font-weight:700;color:var(--tx)}
+.mv.r{color:var(--txd)}.mv.y{color:var(--txw)}.mv.g{color:var(--txs)}.mv.p{color:#6C3483}
+.card{background:var(--bg);border:0.5px solid var(--bdr);border-radius:var(--rl);padding:1rem;margin-bottom:.75rem}
+.card h3{font-size:13px;font-weight:700;margin-bottom:10px;color:var(--tx)}
+.tbl{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{text-align:left;font-weight:700;font-size:11px;color:var(--tx2);padding:7px 8px;border-bottom:0.5px solid var(--bdr);white-space:nowrap}
+td{padding:7px 8px;border-bottom:0.5px solid var(--bdr);color:var(--tx);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--bg2)}
+.b{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;white-space:nowrap;display:inline-block}
+.b.r{background:var(--bgd);color:var(--txd)}.b.y{background:var(--bgw);color:var(--txw)}
+.b.g{background:var(--bgs);color:var(--txs)}.b.p{background:#EAD6F7;color:#6C3483}
+.b.gr{background:var(--bg2);color:var(--tx2)}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:4px;vertical-align:middle}
+.dot.r{background:#e24b4a}.dot.y{background:#ba7517}.dot.g{background:#639922}
+.prog{height:5px;border-radius:3px;background:var(--bdr);display:inline-block;width:50px;vertical-align:middle;margin-left:4px;overflow:hidden}
+.pb{height:100%;border-radius:3px}
+.rph{background:var(--bgd);color:var(--txd);font-size:10px;padding:2px 8px;border-radius:10px;font-weight:700}
+.rpm{background:var(--bgw);color:var(--txw);font-size:10px;padding:2px 8px;border-radius:10px;font-weight:700}
+.rpl{background:var(--bgs);color:var(--txs);font-size:10px;padding:2px 8px;border-radius:10px;font-weight:700}
+.yn-y{color:var(--txs);font-weight:700}.yn-n{color:var(--txd);font-weight:700}
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.fg textarea{grid-column:1/-1;resize:vertical;height:52px}
+.fa{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px}
+.btn.pri{background:var(--bgi);color:var(--txi);border-color:var(--bdri)}
+.btn.pss{background:#EAD6F7;color:#6C3483;border-color:#A569BD}
+.btn.dan{background:var(--bgd);color:var(--txd);border-color:var(--bdrd)}
+.fr{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;align-items:center}
+.fr select,.fr input{width:auto}
+.ai{display:flex;align-items:flex-start;gap:8px;padding:9px 0;border-bottom:0.5px solid var(--bdr)}
+.ai:last-child{border-bottom:none}
+.an{font-size:13px;font-weight:700;color:var(--tx)}
+.am{font-size:11px;color:var(--tx2);margin-top:2px}
+.aa{font-size:11px;color:var(--txi);margin-top:3px}
+.notif{font-size:12px;padding:8px 12px;border-radius:var(--r);margin-bottom:8px;display:none}
+.notif.show{display:block}
+.notif.ok{background:var(--bgs);color:var(--txs)}.notif.info{background:var(--bgi);color:var(--txi)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
+.mb{font-size:11px;padding:3px 9px;border-radius:var(--r);border:0.5px solid var(--bdr2);background:transparent;color:var(--tx2);cursor:pointer}
+.mb:hover{background:var(--bg2)}
+.ts{display:flex;gap:4px;margin-bottom:12px}
+.tsb{font-size:12px;padding:5px 13px;border-radius:var(--r);border:0.5px solid var(--bdr2);background:transparent;color:var(--tx2);cursor:pointer}
+.tsb.active{background:var(--bg2);color:var(--tx);border-color:var(--bdr2)}
+.sp{display:none}.sp.active{display:block}
+.pss-hdr{background:#6C3483;color:#fff;padding:10px 14px;border-radius:var(--rl) var(--rl) 0 0;font-size:13px;font-weight:700}
+.ec{border:0.5px solid var(--bdr);border-radius:var(--rl);overflow:hidden;margin-bottom:.75rem}
+.ec-top{background:var(--bg2);padding:8px 12px;border-bottom:0.5px solid var(--bdr);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.ef{display:flex;align-items:center;gap:6px;padding:5px 12px;border-bottom:0.5px solid var(--bdr)}
+.el{font-size:11px;color:var(--tx2);width:42px;flex-shrink:0}
+.ef input{font-size:12px;flex:1;background:transparent;border:none;color:var(--tx);outline:none;padding:0;width:auto}
+.adm-sec{border:0.5px solid var(--bdr);border-radius:var(--rl);overflow:hidden;margin-bottom:.75rem}
+.adm-h{background:var(--bg2);padding:8px 14px;font-size:12px;font-weight:700;color:var(--tx);border-bottom:0.5px solid var(--bdr)}
+.adm-row{display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:0.5px solid var(--bdr);background:var(--bg)}
+.adm-row:last-child{border-bottom:none}
+@media(max-width:640px){.two{grid-template-columns:1fr}.fg{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div id="syncbar" class="syncbar connecting">
+  <div class="syncdot"></div><span id="syncmsg">Connecting to live database...</span>
+</div>
+
+<div class="wrap">
+<div id="loginScreen" class="login-screen">
+  <div class="lcard">
+    <div class="llogo">
+      <div class="org">Compliance Dashboard</div>
+      <div class="sub">Substance Abuse Treatment Program</div>
+    </div>
+    <div class="lstep active" id="step1">
+      <div class="grp-lbl" style="padding-top:0">Select your name</div>
+      <div class="ulist" id="userList"></div>
+      <div style="font-size:11px;color:var(--tx2);text-align:center;margin-top:10px">Select your name then enter your 4-digit PIN.</div>
+    </div>
+    <div class="lstep" id="step2">
+      <button class="back-btn" onclick="goBack()">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 11L5 7l4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>Back
+      </button>
+      <div style="text-align:center;margin:8px 0 4px">
+        <div style="font-size:15px;font-weight:700;color:var(--tx)" id="pinName"></div>
+        <div style="font-size:11px;color:var(--tx2);margin-top:2px" id="pinRole"></div>
+      </div>
+      <div class="pin-dots"><div class="pd" id="pd0"></div><div class="pd" id="pd1"></div><div class="pd" id="pd2"></div><div class="pd" id="pd3"></div></div>
+      <div class="perr" id="perr"></div>
+      <div class="ppad">
+        <button class="pk" onclick="pk('1')">1</button><button class="pk" onclick="pk('2')">2</button><button class="pk" onclick="pk('3')">3</button>
+        <button class="pk" onclick="pk('4')">4</button><button class="pk" onclick="pk('5')">5</button><button class="pk" onclick="pk('6')">6</button>
+        <button class="pk" onclick="pk('7')">7</button><button class="pk" onclick="pk('8')">8</button><button class="pk" onclick="pk('9')">9</button>
+        <button class="pk empty"></button><button class="pk" onclick="pk('0')">0</button><button class="pk del" onclick="pdel()">&#9003;</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="dash" style="display:none">
+<div class="topbar">
+  <div><h1>Compliance &amp; Peer Support Dashboard</h1><div class="tsub" id="todayStr"></div></div>
+  <div class="tright">
+    <div class="livetag"><div class="livedot"></div><span>Live data</span></div>
+    <div style="display:flex;align-items:center;gap:6px">
+      <div id="topAv" style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0"></div>
+      <span style="font-size:12px;font-weight:700;color:var(--tx)" id="topName"></span>
+      <span class="rbadge" id="rbadge"></span>
+    </div>
+    <button onclick="logout()">Sign out</button>
+  </div>
+</div>
+<div id="notif" class="notif"></div>
+<div class="nav">
+  <button class="active" onclick="showSec('summary',this)">Summary</button>
+  <button onclick="showSec('alerts',this)">Priority alerts</button>
+  <button onclick="showSec('clients',this)">Client tracker</button>
+  <button id="nAdd" onclick="showSec('addclient',this)">Add / edit client</button>
+  <button id="nAtt" onclick="showSec('attendance',this)">Attendance</button>
+  <button id="nBeh" onclick="showSec('behavioral',this)">Behavioral</button>
+  <button id="nPSS" class="pss-tab" style="display:none" onclick="showSec('peersupport',this)">Peer support calls</button>
+  <button id="nRpt" style="display:none" onclick="showSec('reports',this)">Supervisor reports</button>
+  <button id="nAdm" style="display:none" onclick="showSec('admin',this)">Manage PINs</button>
+</div>
+
+<div class="sec active" id="summary">
+  <div class="metrics" id="smMet"></div>
+  <div id="pssCard"></div>
+  <div class="two">
+    <div class="card"><h3>Top priority alerts</h3><div id="smAlerts"></div></div>
+    <div class="card"><h3>Tasks today</h3><div id="smTasks"></div></div>
+  </div>
+  <div class="card"><h3>Caseload at a glance</h3><div class="tbl"><table id="smTable"></table></div></div>
+</div>
+
+<div class="sec" id="alerts"><div class="card"><h3>All active priority alerts</h3><div id="allAlerts"></div></div></div>
+
+<div class="sec" id="clients">
+  <div class="fr">
+    <input id="srch" placeholder="Search..." oninput="renderClients()" style="width:150px">
+    <select id="fC" onchange="renderClients()"><option value="">All counselors</option></select>
+    <select id="fR" onchange="renderClients()"><option value="">All risk</option><option>High</option><option>Moderate</option><option>Low</option></select>
+    <select id="fU" onchange="renderClients()"><option value="">All screens</option><option>Yes</option><option>No</option></select>
+    <select id="fA" onchange="renderClients()"><option value="">All attendance</option><option>Attended</option><option>1 missed</option><option>2+ missed</option></select>
+    <span id="cCnt" style="font-size:12px;color:var(--tx2)"></span>
+  </div>
+  <div class="card" style="padding:0"><div class="tbl"><table id="cTable"></table></div></div>
+</div>
+
+<div class="sec" id="addclient">
+  <div class="card"><h3 id="cfT">Add new client</h3><div class="fg">
+    <input id="fn" placeholder="Full name *"><input id="fi" placeholder="Client ID *">
+    <select id="fc"><option value="">Assign counselor *</option></select>
+    <input id="fa2" type="date">
+    <input id="fl" type="date" placeholder="Last appointment"><input id="fn2" type="date" placeholder="Next appointment">
+    <select id="fat"><option value="">Attendance</option><option value="green">Attended last session</option><option value="yellow">Missed 1 session</option><option value="red">Missed 2+ sessions</option></select>
+    <select id="fu"><option value="">Screen compliant?</option><option value="yes">Yes — negative</option><option value="no">No — positive/refused</option><option value="overdue">No — overdue</option></select>
+    <input id="fls" type="date" placeholder="Last screen date"><input id="fno" placeholder="Notes">
+    <input type="hidden" id="feid">
+    <div class="fa"><button class="btn" onclick="clearCF()">Clear</button><button class="btn pri" onclick="saveClient()">Save client</button></div>
+  </div></div>
+  <div class="card"><h3>Existing clients</h3><div class="tbl"><table id="eTable"></table></div></div>
+</div>
+
+<div class="sec" id="attendance">
+  <div class="metrics" id="aMet"></div>
+  <div class="card"><h3>Log attendance</h3><div class="fg">
+    <select id="ac"><option value="">Select client...</option></select><input id="ad" type="date">
+    <select id="as"><option value="">Status *</option><option>Attended</option><option>No-show</option><option>Cancelled by client</option><option>Rescheduled</option></select>
+    <input id="an2" type="date" placeholder="Reschedule date">
+    <textarea id="ants" placeholder="Notes..."></textarea>
+    <div class="fa"><button class="btn pri" onclick="logAtt()">Save attendance</button></div>
+  </div></div>
+  <div class="card"><h3>Attendance log</h3><div class="tbl"><table id="aTable"></table></div></div>
+</div>
+
+<div class="sec" id="behavioral">
+  <div class="card"><h3>Log behavioral / clinical concern</h3><div class="fg">
+    <select id="bc"><option value="">Select client...</option></select><input id="bd" type="date">
+    <select id="bt"><option value="">Concern type *</option><option>Behavioral Incident</option><option>Suspicion of Use</option><option>Emotional Distress</option><option>Relapse Indicator</option><option>Program Violation</option><option>Safety Concern</option></select>
+    <input id="bfu" placeholder="Follow-up required">
+    <textarea id="bde" placeholder="Description *"></textarea>
+    <div class="fa"><button class="btn pri" onclick="logBeh()">Save concern</button></div>
+  </div></div>
+  <div class="card"><h3>Active concerns</h3><div class="tbl"><table id="bTable"></table></div></div>
+</div>
+
+<div class="sec" id="peersupport">
+  <div class="metrics" id="pssMet"></div>
+  <div class="ts">
+    <button class="tsb active" onclick="showSP('pLog',this)">Call log</button>
+    <button class="tsb" onclick="showSP('pAdd',this)">Log new call</button>
+    <button class="tsb" onclick="showSP('pSum',this)">Client summary</button>
+  </div>
+  <div class="sp active" id="pLog">
+    <div class="fr">
+      <input id="pss" placeholder="Search client..." oninput="renderPLog()" style="width:140px">
+      <select id="pfo" onchange="renderPLog()"><option value="">All outcomes</option><option>Reached Client</option><option>No Answer</option><option>Left Voicemail</option><option>Refused Contact</option></select>
+      <select id="pfs" onchange="renderPLog()"><option value="">All status</option><option>Open</option><option>Closed</option><option>Escalated</option></select>
+      <span id="pCnt" style="font-size:12px;color:var(--tx2)"></span>
+    </div>
+    <div class="card" style="padding:0"><div class="tbl"><table id="pTable"></table></div></div>
+  </div>
+  <div class="sp" id="pAdd">
+    <div class="card"><div class="pss-hdr">Log new outreach call / peer support contact</div><div style="padding:1rem"><div class="fg">
+      <select id="pc"><option value="">Select client *</option></select><input id="pdate" type="date">
+      <select id="ptype"><option value="">Call type *</option><option>Outreach Call</option><option>Wellness Check</option><option>Crisis Follow-Up</option><option>Post-Positive Screen</option><option>Behavioral Follow-Up</option><option>Re-Engagement</option><option>General Support</option><option>Resource Referral</option></select>
+      <select id="pmeth"><option value="">Method *</option><option>Completed</option><option>Voicemail</option><option>No Answer</option><option>Text Sent</option><option>In-Person</option></select>
+      <select id="pout"><option value="">Outcome *</option><option>Reached Client</option><option>No Answer</option><option>Left Voicemail</option><option>Refused Contact</option></select>
+      <select id="ptop"><option value="">Topic</option><option>Motivational Support</option><option>Safety Check</option><option>Appointment Reminder</option><option>Relapse Prevention</option><option>Conflict Resolution</option><option>Resource Referral</option><option>Peer Support</option><option>Check-In</option><option>None</option></select>
+      <textarea id="pnotes" placeholder="Notes / summary..."></textarea>
+      <textarea id="pact" placeholder="Action taken / referral made..."></textarea>
+      <select id="pstat"><option value="">Status *</option><option>Open</option><option>Closed</option><option>Escalated</option></select>
+      <div class="fa"><button class="btn" onclick="clearP()">Clear</button><button class="btn pss" onclick="saveCall()">Save call</button></div>
+    </div></div></div>
+  </div>
+  <div class="sp" id="pSum"><div class="card"><h3>Per-client contact summary</h3><div class="tbl"><table id="psTable"></table></div></div></div>
+</div>
+
+<div class="sec" id="reports">
+  <div class="two">
+    <div>
+      <div class="card"><h3>Pending items</h3><div id="pend"></div></div>
+      <div class="card"><h3>Generate report</h3><div class="fg">
+        <select id="rt" onchange="loadRpt()"><option value="">Report type...</option><option value="pos">Positive screen</option><option value="na">Non-attendance</option><option value="beh">Behavioral incident</option><option value="saf">Safety concern</option><option value="dis">Discharge</option><option value="wk">Weekly summary</option><option value="ps">Peer support summary</option></select>
+        <select id="rc"><option value="">Client (if applicable)...</option></select>
+        <div class="fa"><button class="btn pri" onclick="loadRpt()">Load template</button></div>
+      </div></div>
+    </div>
+    <div>
+      <div class="ec">
+        <div class="ec-top"><span style="font-size:12px;font-weight:700;color:var(--tx)">Compose report email</span><button class="btn" onclick="sD()">Save draft</button><button class="btn pri" onclick="sR()">Send</button><button class="btn dan" onclick="cE()">Clear</button></div>
+        <div class="ef"><span class="el">To</span><input id="eto" value="clinical.director@program.org; compliance@program.org"></div>
+        <div class="ef"><span class="el">Cc</span><input id="ecc" value="qm@program.org"></div>
+        <div class="ef"><span class="el">Subject</span><input id="esub" placeholder="Subject..." style="font-weight:700;font-size:13px"></div>
+        <div class="ef" style="padding:0"><textarea id="ebody" style="width:100%;min-height:220px;padding:12px;font-size:12px;background:transparent;border:none;outline:none;color:var(--tx);line-height:1.7;resize:vertical;font-family:var(--font)" placeholder="Report body loads here..."></textarea></div>
+        <div style="padding:6px 12px;border-top:0.5px solid var(--bdr);font-size:11px;color:var(--tx2)" id="estat">Select a report type to load</div>
+      </div>
+      <div class="card"><h3>Sent this session</h3><div id="sentLog" style="font-size:12px;color:var(--tx2)">No reports sent yet.</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="sec" id="admin">
+  <div class="card"><h3>Manage user PINs &mdash; supervisor only</h3>
+    <div style="font-size:12px;color:var(--tx2);margin-bottom:1rem">Changes save instantly and sync to all users in real time.</div>
+    <div id="adminList"></div>
+  </div>
+  <div class="card"><h3>Add new staff member</h3><div class="fg">
+    <input id="nu_n" placeholder="Full name *"><input id="nu_id" placeholder="Login ID (no spaces) *">
+    <select id="nu_r"><option value="">Role *</option><option value="sup">Supervisor</option><option value="coun">Counselor</option><option value="pss">Peer Specialist</option></select>
+    <input id="nu_p" type="password" maxlength="4" inputmode="numeric" placeholder="4-digit PIN *" style="letter-spacing:5px">
+    <div class="fa"><button class="btn pri" onclick="addUser()">Add staff member</button></div>
+  </div></div>
+  <div class="card"><h3>Role permissions</h3><div class="tbl"><table>
+    <tr><th>Role</th><th>Client data</th><th>Add/edit clients</th><th>Attendance</th><th>Behavioral</th><th>Peer support</th><th>Reports</th><th>Manage PINs</th></tr>
+    <tr><td><span class="b" style="background:var(--bgi);color:var(--txi)">Supervisor</span></td><td>All clients</td><td>Yes</td><td>All</td><td>All</td><td>View only</td><td>Yes</td><td>Yes</td></tr>
+    <tr><td><span class="b g">Counselor</span></td><td>Own caseload</td><td>Yes</td><td>Own</td><td>Own</td><td>No</td><td>No</td><td>No</td></tr>
+    <tr><td><span class="b p">Peer Specialist</span></td><td>View all</td><td>No</td><td>No</td><td>No</td><td>Full access</td><td>No</td><td>No</td></tr>
+  </table></div></div>
+</div>
+</div>
+</div>
+
+<!-- Firebase SDK -->
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
+import { getDatabase, ref, set, get, onValue, update } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js';
+
+// ── YOUR FIREBASE CONFIG ──────────────────────────────────────────────────────
+const firebaseConfig = {
+  apiKey: "AIzaSyDJ5ZyUCxkWAN3chUibQryBjobJWYelr4k",
+  authDomain: "compliance-dashboard-27686.firebaseapp.com",
+  databaseURL: "https://compliance-dashboard-27686-default-rtdb.firebaseio.com",
+  projectId: "compliance-dashboard-27686",
+  storageBucket: "compliance-dashboard-27686.firebasestorage.app",
+  messagingSenderId: "119371072815",
+  appId: "1:119371072815:web:b08411a938611470cf8dda"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+const todayISO = new Date().toISOString().slice(0,10);
+document.getElementById('todayStr').textContent = new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+
+const ROLES = {sup:'Supervisor',coun:'Counselor',pss:'Peer Specialist'};
+const BASE_USERS = [
+  {id:'herbert',name:'Herbert',role:'sup',initials:'HB',av:'av-sup'},
+  {id:'aditya',name:'Aditya',role:'sup',initials:'AD',av:'av-sup'},
+  {id:'jerril',name:'Jerril',role:'sup',initials:'JR',av:'av-sup'},
+  {id:'reja',name:'Reja',role:'sup',initials:'RE',av:'av-sup'},
+  {id:'chalia',name:'Chalia',role:'pss',initials:'CH',av:'av-pss'},
+  {id:'daron',name:'Daron',role:'pss',initials:'DA',av:'av-pss'},
+];
+const DEFAULT_PINS = {herbert:'1111',aditya:'2222',jerril:'3333',reja:'4444',chalia:'5555',daron:'6666'};
+
+let selUser=null, pin='', curUser=null, sent=[];
+let liveData = {users:[...BASE_USERS],pins:{},clients:[],attendance:[],behavioral:[],calls:[]};
+
+// ── FIREBASE SYNC ─────────────────────────────────────────────────────────────
+function setSyncBar(state, msg) {
+  const bar = document.getElementById('syncbar');
+  bar.className = 'syncbar ' + state;
+  document.getElementById('syncmsg').textContent = msg;
+}
+
+// Listen for all data changes in real time
+onValue(ref(db, 'dashboard'), (snapshot) => {
+  const data = snapshot.val();
+  if (data) {
+    liveData = {
+      users: data.users ? Object.values(data.users) : [...BASE_USERS],
+      pins: data.pins || {},
+      clients: data.clients ? Object.values(data.clients) : [],
+      attendance: data.attendance ? Object.values(data.attendance) : [],
+      behavioral: data.behavioral ? Object.values(data.behavioral) : [],
+      calls: data.calls ? Object.values(data.calls) : [],
+    };
+  }
+  setSyncBar('live', 'Live — all changes sync instantly');
+  buildUserList();
+  if (curUser) renderAll();
+}, (error) => {
+  setSyncBar('error', 'Connection lost — check internet');
+});
+
+async function writeDB(path, data) {
+  try {
+    await set(ref(db, 'dashboard/' + path), data);
+  } catch(e) {
+    sn('Save failed — check connection','info');
+  }
+}
+
+async function initData() {
+  const snap = await get(ref(db, 'dashboard/clients'));
+  if (snap.exists() && snap.val()) return;
+  const ago = n => {const x=new Date();x.setDate(x.getDate()+n);return x.toISOString().slice(0,10);};
+  // Seed initial data
+  const usersObj = {};
+  BASE_USERS.forEach(u => usersObj[u.id] = u);
+  const clients = [
+    {id:'10042',name:'Marcus D.',counselor:'Herbert',admitted:'2025-11-10',lastAppt:ago(-2),nextAppt:ago(2),att:'green',urine:'no',lastScreen:ago(-2),notes:'Positive screen — opioids'},
+    {id:'10017',name:'Yolanda K.',counselor:'Herbert',admitted:'2025-09-03',lastAppt:ago(-1),nextAppt:ago(3),att:'green',urine:'no',lastScreen:ago(-1),notes:'2nd positive in 30 days'},
+    {id:'10031',name:'Tommy R.',counselor:'Herbert',admitted:'2026-01-15',lastAppt:ago(-16),nextAppt:'',att:'red',urine:'overdue',lastScreen:ago(-24),notes:'No contact 16 days'},
+    {id:'10058',name:'Darlene M.',counselor:'Herbert',admitted:'2025-08-22',lastAppt:ago(-3),nextAppt:ago(1),att:'green',urine:'overdue',lastScreen:ago(-19),notes:'Overdue screen'},
+    {id:'10009',name:'Jerome B.',counselor:'Herbert',admitted:'2025-12-01',lastAppt:ago(-13),nextAppt:'',att:'red',urine:'overdue',lastScreen:ago(-16),notes:'Suicidal ideation reported'},
+    {id:'10034',name:'Carlos V.',counselor:'Herbert',admitted:'2025-10-19',lastAppt:ago(-6),nextAppt:ago(1),att:'yellow',urine:'yes',lastScreen:ago(-6),notes:'Missed 1 session'},
+    {id:'10023',name:'Patricia H.',counselor:'Herbert',admitted:'2025-05-30',lastAppt:ago(-1),nextAppt:ago(2),att:'green',urine:'yes',lastScreen:ago(-12),notes:''},
+    {id:'10047',name:'Renee T.',counselor:'Herbert',admitted:'2026-02-10',lastAppt:ago(-3),nextAppt:ago(1),att:'yellow',urine:'yes',lastScreen:ago(-5),notes:'Behavioral incident'},
+    {id:'10011',name:'Sandra L.',counselor:'Herbert',admitted:'2025-04-12',lastAppt:ago(-2),nextAppt:ago(5),att:'green',urine:'yes',lastScreen:ago(-4),notes:''},
+  ];
+  const clientsObj = {};
+  clients.forEach(c => clientsObj[c.id] = c);
+  const behavioral = [
+    {id:'b1',clientId:'10009',date:ago(-3),type:'Safety Concern',desc:'Suicidal ideation during outreach call',followup:'Safety plan reviewed, EC notified',status:'open'},
+    {id:'b2',clientId:'10047',date:ago(-3),type:'Behavioral Incident',desc:'Verbal altercation with peer during group',followup:'Individual session scheduled',status:'open'},
+    {id:'b3',clientId:'10042',date:ago(-2),type:'Suspicion of Use',desc:'Slurred speech at check-in, positive confirmed',followup:'Clinical review',status:'open'},
+  ];
+  const behavObj = {};
+  behavioral.forEach(b => behavObj[b.id] = b);
+  const calls = [
+    {id:'PSS-001',clientId:'10031',clientName:'Tommy R.',counselor:'Herbert',specialist:'Chalia',date:ago(-4),type:'Outreach Call',method:'Voicemail',outcome:'No Answer',topic:'None',notes:'Attempt 1',action:'',status:'Open'},
+    {id:'PSS-002',clientId:'10009',clientName:'Jerome B.',counselor:'Herbert',specialist:'Chalia',date:ago(-3),type:'Crisis Follow-Up',method:'Completed',outcome:'Reached Client',topic:'Safety Check',notes:'Safety plan reviewed',action:'Referred to counselor',status:'Escalated'},
+    {id:'PSS-003',clientId:'10042',clientName:'Marcus D.',counselor:'Herbert',specialist:'Daron',date:ago(-1),type:'Post-Positive Screen',method:'Completed',outcome:'Reached Client',topic:'Peer Support',notes:'Discussed relapse',action:'Counselor notified',status:'Open'},
+  ];
+  const callsObj = {};
+  calls.forEach(c => callsObj[c.id] = c);
+  await set(ref(db, 'dashboard'), {
+    users: usersObj, pins: DEFAULT_PINS,
+    clients: clientsObj, behavioral: behavObj,
+    calls: callsObj, attendance: {}
+  });
+}
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+function getUsers(){return liveData.users&&liveData.users.length?liveData.users:[...BASE_USERS];}
+function getPins(){return Object.assign({},DEFAULT_PINS,liveData.pins||{});}
+function getCounselors(){return getUsers().filter(u=>u.role==='coun');}
+function getCaseload(){if(!curUser)return[];if(curUser.role!=='coun')return liveData.clients||[];return(liveData.clients||[]).filter(c=>c.counselor===curUser.name);}
+function getPSSCalls(){if(!curUser)return[];return curUser.role==='pss'?(liveData.calls||[]).filter(c=>c.specialist===curUser.name):liveData.calls||[];}
+function score(c){let s=100;if(c.att==='yellow')s-=15;if(c.att==='red')s-=35;if(c.urine!=='yes')s-=30;(liveData.behavioral||[]).filter(b=>b.clientId===c.id&&b.status==='open').forEach(()=>s-=8);return Math.max(0,Math.min(100,s));}
+function rl(s){return s>=90?'Low':s>=70?'Moderate':'High';}
+function dago(dt){if(!dt)return 999;return Math.floor((new Date()-new Date(dt))/86400000);}
+function al(a){if(a==='green')return{d:'g',l:'Attended'};if(a==='yellow')return{d:'y',l:'1 missed'};if(a==='red')return{d:'r',l:'2+ missed'};return{d:'',l:'—'};}
+function ud(u){return u==='yes'?'<span class="yn-y">Yes</span>':'<span class="yn-n">No</span>';}
+function sb(s){const c=s>=90?'#1e8449':s>=70?'#ba7517':'#e24b4a';return`${s}<div class="prog"><div class="pb" style="width:${s}%;background:${c}"></div></div>`;}
+function rp(r){return`<span class="${r==='High'?'rph':r==='Moderate'?'rpm':'rpl'}">${r}</span>`;}
+function sn(msg,type){const n=document.getElementById('notif');n.textContent=msg;n.className='notif show '+type;setTimeout(()=>n.className='notif',3000);}
+function showSec(id,btn){document.querySelectorAll('.sec').forEach(s=>s.classList.remove('active'));document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));document.getElementById(id).classList.add('active');if(btn)btn.classList.add('active');if(id==='admin')renderAdmin();else renderAll();}
+function showSP(id,btn){document.querySelectorAll('.sp').forEach(s=>s.classList.remove('active'));document.querySelectorAll('.tsb').forEach(b=>b.classList.remove('active'));document.getElementById(id).classList.add('active');if(btn)btn.classList.add('active');if(id==='pLog')renderPLog();if(id==='pSum')renderPSum();}
+
+function populateDDs(){
+  const couns=getCounselors();
+  const fC=document.getElementById('fC');const fv=fC.value;fC.innerHTML='<option value="">All counselors</option>';couns.forEach(c=>{const o=document.createElement('option');o.value=c.name;o.textContent=c.name;fC.appendChild(o);});fC.value=fv;
+  const fc=document.getElementById('fc');const fcv=fc.value;fc.innerHTML='<option value="">Assign counselor *</option>';couns.forEach(c=>{const o=document.createElement('option');o.value=c.name;o.textContent=c.name;fc.appendChild(o);});fc.value=fcv;
+  ['ac','bc','pc','rc'].forEach(id=>{const s=document.getElementById(id);if(!s)return;const v=s.value;s.innerHTML=id==='rc'?'<option value="">Client (if applicable)...</option>':'<option value="">Select client...</option>';getCaseload().sort((a,b)=>a.name.localeCompare(b.name)).forEach(c=>{const o=document.createElement('option');o.value=c.id;o.textContent=c.name+' ('+c.id+')';s.appendChild(o);});s.value=v;});
+}
+
+function buildAlerts(cls){
+  const a=[];
+  cls.forEach(c=>{
+    if(c.urine==='no')a.push({lv:'r',type:'Positive screen',name:c.name+' · '+c.counselor,meta:'Screen non-compliant · '+c.lastScreen,action:'Clinical review required',sort:1});
+    if(c.att==='red')a.push({lv:'r',type:'2+ sessions missed',name:c.name+' · '+c.counselor,meta:'Last: '+c.lastAppt+' ('+dago(c.lastAppt)+'d)',action:'Outreach / discharge review',sort:2});
+    if(c.urine==='overdue')a.push({lv:'r',type:'Screen overdue',name:c.name+' · '+c.counselor,meta:'Last screen '+dago(c.lastScreen)+'d ago',action:'Schedule today',sort:2});
+    if(c.att==='yellow')a.push({lv:'y',type:'1 session missed',name:c.name+' · '+c.counselor,meta:'Last: '+c.lastAppt,action:'Confirm rescheduled appt',sort:4});
+  });
+  (liveData.behavioral||[]).filter(b=>b.status==='open'&&cls.find(c=>c.id===b.clientId)).forEach(b=>{const c=cls.find(cl=>cl.id===b.clientId);if(c)a.push({lv:b.type==='Safety Concern'?'r':'y',type:b.type,name:c.name+' · '+c.counselor,meta:b.date+': '+b.desc.slice(0,50),action:b.followup,sort:b.type==='Safety Concern'?1:3});});
+  return a.sort((a,b)=>a.sort-b.sort);
+}
+
+function renderAll(){if(!curUser)return;populateDDs();renderSum();renderAlerts();renderClients();renderETbl();renderAtt();renderBeh();renderPMet();renderPLog();renderPSum();if(curUser.role==='sup')renderPend();}
+
+function renderSum(){
+  const cls=getCaseload();
+  document.getElementById('smMet').innerHTML=`<div class="metric"><div class="ml">Caseload</div><div class="mv">${cls.length}</div></div><div class="metric"><div class="ml">High risk</div><div class="mv r">${cls.filter(c=>rl(score(c))==='High').length}</div></div><div class="metric"><div class="ml">Moderate risk</div><div class="mv y">${cls.filter(c=>rl(score(c))==='Moderate').length}</div></div><div class="metric"><div class="ml">Fully compliant</div><div class="mv g">${cls.filter(c=>rl(score(c))==='Low').length}</div></div><div class="metric"><div class="ml">Screen non-compliant</div><div class="mv r">${cls.filter(c=>c.urine!=='yes').length}</div></div><div class="metric"><div class="ml">2+ sessions missed</div><div class="mv r">${cls.filter(c=>c.att==='red').length}</div></div>`;
+  const calls=liveData.calls||[];
+  document.getElementById('pssCard').innerHTML=`<div class="card" style="border-left:3px solid #8E44AD;border-radius:0 var(--rl) var(--rl) 0"><h3 style="color:#6C3483">Peer support — Chalia &amp; Daron</h3><div class="metrics" style="margin-bottom:0"><div class="metric"><div class="ml">Total calls</div><div class="mv p">${calls.length}</div></div><div class="metric"><div class="ml">Reached</div><div class="mv g">${calls.filter(c=>c.outcome==='Reached Client').length}</div></div><div class="metric"><div class="ml">Open</div><div class="mv y">${calls.filter(c=>c.status==='Open').length}</div></div><div class="metric"><div class="ml">Escalated</div><div class="mv r">${calls.filter(c=>c.status==='Escalated').length}</div></div></div></div>`;
+  const alerts=buildAlerts(cls).slice(0,5);
+  document.getElementById('smAlerts').innerHTML=alerts.length?alerts.map(a=>`<div class="ai"><span class="b ${a.lv}">${a.type}</span><div><div class="an">${a.name}</div><div class="am">${a.meta}</div><div class="aa">${a.action}</div></div></div>`).join(''):'<div style="font-size:12px;color:var(--tx2);padding:8px 0">No active alerts.</div>';
+  const tasks=[];cls.forEach(c=>{if(c.urine==='no')tasks.push({lv:'r',pri:'Urgent',t:'Clinical review — positive screen',cl:c.name});if(c.att==='red'&&dago(c.lastAppt)>=14)tasks.push({lv:'r',pri:'Urgent',t:'Discharge review',cl:c.name});if(c.urine==='overdue')tasks.push({lv:'r',pri:'Today',t:'Schedule overdue screen',cl:c.name});if(c.att==='yellow')tasks.push({lv:'y',pri:'This week',t:'Confirm appointment',cl:c.name});});
+  document.getElementById('smTasks').innerHTML=tasks.slice(0,8).map(t=>`<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:0.5px solid var(--bdr)"><span class="b ${t.lv}" style="flex-shrink:0">${t.pri}</span><div><div style="font-size:12px;font-weight:700;color:var(--tx)">${t.t}</div><div style="font-size:11px;color:var(--tx2)">${t.cl}</div></div></div>`).join('')||'<div style="font-size:12px;color:var(--tx2);padding:8px 0">No tasks.</div>';
+  document.getElementById('smTable').innerHTML='<tr><th>Client</th><th>Counselor</th><th>Attendance</th><th>Screen</th><th>Score</th><th>Risk</th></tr>'+cls.sort((a,b)=>score(a)-score(b)).map(c=>{const s=score(c);const a=al(c.att);return`<tr><td>${c.name}</td><td>${c.counselor}</td><td><span class="dot ${a.d}"></span>${a.l}</td><td>${ud(c.urine)}</td><td>${sb(s)}</td><td>${rp(rl(s))}</td></tr>`;}).join('');
+}
+
+function renderAlerts(){const alerts=buildAlerts(getCaseload());document.getElementById('allAlerts').innerHTML=alerts.length?alerts.map(a=>`<div class="ai"><span class="b ${a.lv}">${a.type}</span><div><div class="an">${a.name}</div><div class="am">${a.meta}</div><div class="aa">${a.action}</div></div></div>`).join(''):'<div style="font-size:12px;color:var(--tx2)">No active alerts.</div>';}
+
+function renderClients(){
+  let cls=curUser.role==='sup'?liveData.clients||[]:curUser.role==='pss'?liveData.clients||[]:(liveData.clients||[]).filter(c=>c.counselor===curUser.name);
+  const s=document.getElementById('srch').value.toLowerCase();const fC=document.getElementById('fC').value;const fR=document.getElementById('fR').value;const fU=document.getElementById('fU').value;const fA=document.getElementById('fA').value;
+  if(s)cls=cls.filter(c=>c.name.toLowerCase().includes(s)||c.id.includes(s));if(fC)cls=cls.filter(c=>c.counselor===fC);if(fR)cls=cls.filter(c=>rl(score(c))===fR);if(fU==='Yes')cls=cls.filter(c=>c.urine==='yes');if(fU==='No')cls=cls.filter(c=>c.urine!=='yes');if(fA==='Attended')cls=cls.filter(c=>c.att==='green');if(fA==='1 missed')cls=cls.filter(c=>c.att==='yellow');if(fA==='2+ missed')cls=cls.filter(c=>c.att==='red');
+  cls.sort((a,b)=>score(a)-score(b));document.getElementById('cCnt').textContent=cls.length+' clients';
+  const ce=curUser.role!=='pss';
+  document.getElementById('cTable').innerHTML=`<tr><th>Client</th><th>ID</th><th>Counselor</th><th>Last appt</th><th>Next appt</th><th>Attendance</th><th>Screen</th><th>Score</th><th>Risk</th><th>Notes</th>${ce?'<th></th>':''}</tr>`+cls.map(c=>{const sc=score(c);const a=al(c.att);return`<tr><td>${c.name}</td><td>${c.id}</td><td>${c.counselor}</td><td>${c.lastAppt||'—'}</td><td>${c.nextAppt||'—'}</td><td><span class="dot ${a.d}"></span>${a.l}</td><td>${ud(c.urine)}</td><td>${sb(sc)}</td><td>${rp(rl(sc))}</td><td>${c.notes||'—'}</td>${ce?`<td><button class="mb" onclick="editC('${c.id}')">Edit</button></td>`:''}</tr>`;}).join('');
+}
+
+async function saveClient(){
+  const name=document.getElementById('fn').value.trim();const id=document.getElementById('fi').value.trim();const counselor=document.getElementById('fc').value;
+  if(!name||!id||!counselor){sn('Name, ID and counselor required.','info');return;}
+  const eid=document.getElementById('feid').value;
+  const c={id,name,counselor,admitted:document.getElementById('fa2').value,lastAppt:document.getElementById('fl').value,nextAppt:document.getElementById('fn2').value,att:document.getElementById('fat').value||'green',urine:document.getElementById('fu').value||'yes',lastScreen:document.getElementById('fls').value,notes:document.getElementById('fno').value};
+  if(!eid&&(liveData.clients||[]).find(x=>x.id===id)){sn('Client ID exists.','info');return;}
+  await writeDB('clients/'+id, c);
+  clearCF();sn(eid?'Client updated.':'Client added. All users can see this now.','ok');
+}
+function clearCF(){['fn','fi','fl','fn2','fls','fno','feid'].forEach(i=>document.getElementById(i).value='');['fc','fat','fu'].forEach(i=>document.getElementById(i).value='');document.getElementById('fa2').value=todayISO;document.getElementById('cfT').textContent='Add new client';}
+function editC(id){const c=(liveData.clients||[]).find(x=>x.id===id);if(!c)return;document.getElementById('fn').value=c.name;document.getElementById('fi').value=c.id;document.getElementById('fc').value=c.counselor;document.getElementById('fa2').value=c.admitted||'';document.getElementById('fl').value=c.lastAppt||'';document.getElementById('fn2').value=c.nextAppt||'';document.getElementById('fat').value=c.att||'green';document.getElementById('fu').value=c.urine||'yes';document.getElementById('fls').value=c.lastScreen||'';document.getElementById('fno').value=c.notes||'';document.getElementById('feid').value=c.id;document.getElementById('cfT').textContent='Editing: '+c.name;showSec('addclient',null);}
+async function delC(id){if(!confirm('Delete client?'))return;await set(ref(db,'dashboard/clients/'+id),null);sn('Client removed.','ok');}
+function renderETbl(){document.getElementById('eTable').innerHTML='<tr><th>Client</th><th>ID</th><th>Counselor</th><th>Risk</th><th>Score</th><th></th><th></th></tr>'+(getCaseload().sort((a,b)=>a.name.localeCompare(b.name)).map(c=>{const s=score(c);return`<tr><td>${c.name}</td><td>${c.id}</td><td>${c.counselor}</td><td>${rp(rl(s))}</td><td>${s}</td><td><button class="mb" onclick="editC('${c.id}')">Edit</button></td><td><button class="mb" style="color:var(--txd)" onclick="delC('${c.id}')">Del</button></td></tr>`;}).join('')||'<tr><td colspan="7" style="color:var(--tx2);padding:12px">No clients yet.</td></tr>');}
+
+function renderAtt(){const cls=getCaseload();document.getElementById('aMet').innerHTML=`<div class="metric"><div class="ml">Attended</div><div class="mv g">${cls.filter(c=>c.att==='green').length}</div></div><div class="metric"><div class="ml">Missed 1</div><div class="mv y">${cls.filter(c=>c.att==='yellow').length}</div></div><div class="metric"><div class="ml">Missed 2+</div><div class="mv r">${cls.filter(c=>c.att==='red').length}</div></div><div class="metric"><div class="ml">Absent 14+d</div><div class="mv r">${cls.filter(c=>dago(c.lastAppt)>=14).length}</div></div>`;const log=(liveData.attendance||[]).filter(a=>cls.find(c=>c.id===a.clientId)).sort((a,b)=>b.date.localeCompare(a.date));document.getElementById('aTable').innerHTML='<tr><th>Client</th><th>Counselor</th><th>Date</th><th>Status</th><th>Notes</th></tr>'+(log.map(a=>{const c=cls.find(cl=>cl.id===a.clientId);return`<tr><td>${c?c.name:a.clientId}</td><td>${c?c.counselor:'—'}</td><td>${a.date}</td><td><span class="b ${a.status==='Attended'?'g':'y'}">${a.status}</span></td><td>${a.notes||'—'}</td></tr>`;}).join('')||'<tr><td colspan="5" style="color:var(--tx2);padding:12px">No attendance logged yet.</td></tr>');}
+
+async function logAtt(){
+  const cid=document.getElementById('ac').value;const status=document.getElementById('as').value;
+  if(!cid||!status){sn('Select client and status.','info');return;}
+  const aId='att_'+Date.now();
+  const entry={id:aId,clientId:cid,date:document.getElementById('ad').value||todayISO,status,notes:document.getElementById('ants').value};
+  await writeDB('attendance/'+aId, entry);
+  const c=(liveData.clients||[]).find(x=>x.id===cid);
+  if(c){
+    const updates={};
+    if(status==='Attended'){updates['dashboard/clients/'+cid+'/att']='green';updates['dashboard/clients/'+cid+'/lastAppt']=document.getElementById('ad').value||todayISO;}
+    else if(status==='No-show'||status==='Cancelled by client'){updates['dashboard/clients/'+cid+'/att']=c.att==='yellow'?'red':'yellow';}
+    if(Object.keys(updates).length)await update(ref(db),updates);
+  }
+  ['ac','an2','ants'].forEach(i=>document.getElementById(i).value='');document.getElementById('as').value='';document.getElementById('ad').value=todayISO;
+  sn('Attendance saved — visible to all users now.','ok');
+}
+
+function renderBeh(){const cls=getCaseload();const items=(liveData.behavioral||[]).filter(b=>b.status==='open'&&cls.find(c=>c.id===b.clientId));document.getElementById('bTable').innerHTML='<tr><th>Client</th><th>Counselor</th><th>Date</th><th>Type</th><th>Description</th><th>Follow-up</th><th></th></tr>'+(items.map(b=>{const c=cls.find(cl=>cl.id===b.clientId);const lv=b.type==='Safety Concern'||b.type==='Relapse Indicator'?'r':'y';return`<tr><td>${c?c.name:b.clientId}</td><td>${c?c.counselor:'—'}</td><td>${b.date}</td><td><span class="b ${lv}">${b.type}</span></td><td>${b.desc}</td><td>${b.followup||'—'}</td><td><button class="mb" style="color:var(--txs)" onclick="resB('${b.id}')">Resolve</button></td></tr>`;}).join('')||'<tr><td colspan="7" style="color:var(--tx2);padding:12px">No open concerns.</td></tr>');}
+
+async function logBeh(){
+  const cid=document.getElementById('bc').value;const type=document.getElementById('bt').value;const desc=document.getElementById('bde').value.trim();
+  if(!cid||!type||!desc){sn('Client, type, description required.','info');return;}
+  const bId='b_'+Date.now();
+  await writeDB('behavioral/'+bId,{id:bId,clientId:cid,date:document.getElementById('bd').value||todayISO,type,desc,followup:document.getElementById('bfu').value,status:'open'});
+  ['bc','bfu','bde'].forEach(i=>document.getElementById(i).value='');document.getElementById('bt').value='';document.getElementById('bd').value=todayISO;
+  sn('Concern logged — all supervisors can see this.','ok');
+}
+async function resB(id){await writeDB('behavioral/'+id+'/status','resolved');sn('Resolved.','ok');}
+
+function renderPMet(){const calls=getPSSCalls();document.getElementById('pssMet').innerHTML=`<div class="metric"><div class="ml">Total calls</div><div class="mv p">${calls.length}</div></div><div class="metric"><div class="ml">Reached</div><div class="mv g">${calls.filter(c=>c.outcome==='Reached Client').length}</div></div><div class="metric"><div class="ml">No answer</div><div class="mv y">${calls.filter(c=>c.outcome==='No Answer'||c.outcome==='Left Voicemail').length}</div></div><div class="metric"><div class="ml">Open</div><div class="mv y">${calls.filter(c=>c.status==='Open').length}</div></div><div class="metric"><div class="ml">Escalated</div><div class="mv r">${calls.filter(c=>c.status==='Escalated').length}</div></div><div class="metric"><div class="ml">Closed</div><div class="mv g">${calls.filter(c=>c.status==='Closed').length}</div></div>`;}
+
+function renderPLog(){let calls=getPSSCalls();const s=(document.getElementById('pss').value||'').toLowerCase();const fO=document.getElementById('pfo').value;const fS=document.getElementById('pfs').value;if(s)calls=calls.filter(c=>c.clientName.toLowerCase().includes(s));if(fO)calls=calls.filter(c=>c.outcome===fO);if(fS)calls=calls.filter(c=>c.status===fS);calls.sort((a,b)=>b.date.localeCompare(a.date));document.getElementById('pCnt').textContent=calls.length+' calls';const oc=o=>o==='Reached Client'?'g':o==='Refused Contact'?'r':'y';const sc=s=>s==='Closed'?'g':s==='Escalated'?'r':'y';document.getElementById('pTable').innerHTML='<tr><th>ID</th><th>Client</th><th>Specialist</th><th>Date</th><th>Type</th><th>Outcome</th><th>Topic</th><th>Notes</th><th>Action</th><th>Status</th></tr>'+calls.map(c=>`<tr><td>${c.id}</td><td style="font-weight:700">${c.clientName}</td><td>${c.specialist||'—'}</td><td>${c.date}</td><td style="color:${c.type==='Crisis Follow-Up'?'#c0392b':c.type==='Post-Positive Screen'?'#b7770d':'var(--tx)'}">${c.type}</td><td><span class="b ${oc(c.outcome)}">${c.outcome}</span></td><td>${c.topic||'—'}</td><td style="font-size:11px;color:var(--tx2);max-width:130px;white-space:normal">${c.notes||'—'}</td><td style="font-size:11px;max-width:110px;white-space:normal">${c.action||'—'}</td><td><span class="b ${sc(c.status)}">${c.status}</span></td></tr>`).join('')||'<tr><td colspan="10" style="color:var(--tx2);padding:12px">No calls logged yet.</td></tr>';}
+
+async function saveCall(){
+  const cid=document.getElementById('pc').value;const type=document.getElementById('ptype').value;const meth=document.getElementById('pmeth').value;const out=document.getElementById('pout').value;const stat=document.getElementById('pstat').value;
+  if(!cid||!type||!meth||!out||!stat){sn('All required fields must be filled.','info');return;}
+  const c=(liveData.clients||[]).find(x=>x.id===cid);
+  const callId='PSS-'+String((liveData.calls||[]).length+1).padStart(3,'0')+'-'+Date.now();
+  await writeDB('calls/'+callId,{id:callId,clientId:cid,clientName:c?c.name:cid,counselor:c?c.counselor:'—',specialist:curUser.name,date:document.getElementById('pdate').value||todayISO,type,method:meth,outcome:out,topic:document.getElementById('ptop').value,notes:document.getElementById('pnotes').value,action:document.getElementById('pact').value,status:stat});
+  clearP();showSP('pLog',document.querySelector('.tsb'));sn('Call logged — supervisors can see this now.','ok');
+}
+function clearP(){['pc','ptype','pmeth','pout','ptop','pstat'].forEach(i=>document.getElementById(i).value='');['pnotes','pact'].forEach(i=>document.getElementById(i).value='');document.getElementById('pdate').value=todayISO;}
+function renderPSum(){const calls=getPSSCalls();const seen={};calls.forEach(c=>{if(!seen[c.clientId])seen[c.clientId]={name:c.clientName,counselor:c.counselor,total:0,reached:0,noans:0,open:0,esc:0,last:''};const r=seen[c.clientId];r.total++;if(c.outcome==='Reached Client')r.reached++;if(c.outcome==='No Answer'||c.outcome==='Left Voicemail')r.noans++;if(c.status==='Open')r.open++;if(c.status==='Escalated')r.esc++;if(!r.last||c.date>r.last)r.last=c.date;});document.getElementById('psTable').innerHTML='<tr><th>Client</th><th>Counselor</th><th>Total</th><th>Reached</th><th>No answer</th><th>Open</th><th>Escalated</th><th>Last contact</th></tr>'+Object.entries(seen).map(([cid,r])=>`<tr><td style="font-weight:700">${r.name}</td><td>${r.counselor}</td><td>${r.total}</td><td><span class="b g">${r.reached}</span></td><td>${r.noans}</td><td><span class="b ${r.open>0?'y':'gr'}">${r.open}</span></td><td><span class="b ${r.esc>0?'r':'gr'}">${r.esc}</span></td><td>${r.last||'—'}</td></tr>`).join('')||'<tr><td colspan="8" style="color:var(--tx2);padding:12px">No data yet.</td></tr>';}
+
+function renderPend(){const urgent=(liveData.clients||[]).filter(c=>c.urine==='no'||(c.att==='red'&&dago(c.lastAppt)>=7));document.getElementById('pend').innerHTML=urgent.length?urgent.slice(0,5).map(c=>{const issue=c.urine==='no'?'Positive screen':'Non-attendance';return`<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:0.5px solid var(--bdr)"><span class="b ${c.urine==='no'?'r':'y'}">${issue}</span><div style="flex:1"><div style="font-size:13px;font-weight:700;color:var(--tx)">${c.name}</div><div style="font-size:11px;color:var(--tx2)">${c.counselor}</div></div><button class="mb" onclick="loadFC('${c.id}')">Load</button></div>`;}).join(''):'<div style="font-size:12px;color:var(--tx2)">No pending items.</div>';}
+
+function loadFC(id){const c=(liveData.clients||[]).find(x=>x.id===id);if(!c)return;document.getElementById('rc').value=id;document.getElementById('rt').value=c.urine==='no'?'pos':'na';loadRpt();}
+function loadRpt(){const type=document.getElementById('rt').value;const cid=document.getElementById('rc').value;if(!type)return;const c=(liveData.clients||[]).find(x=>x.id===cid)||null;const td=new Date().toLocaleDateString('en-US',{month:'2-digit',day:'2-digit',year:'numeric'});const sup=curUser?curUser.name:'[Supervisor]';const calls=liveData.calls||[];const clients=liveData.clients||[];const behav=liveData.behavioral||[];const bodies={pos:`To: Clinical Director\nRe: Positive Screen — ${c?c.name:'[Client]'} (${c?c.id:'[ID]'})\nDate: ${td} | Counselor: ${c?c.counselor:'[Counselor]'}\nSubmitted by: ${sup}\n\nScreen date: ${c?c.lastScreen:'[Date]'} | Result: Positive — [Substance]\nIntervention: [Describe action]\nFollow-up: Clinical review within 48h\n\nSupervisor: ${sup}`,na:`To: Clinical Director\nRe: Non-Attendance — ${c?c.name:'[Client]'}\nDate: ${td} | Counselor: ${c?c.counselor:'[Counselor]'}\nSubmitted by: ${sup}\n\nLast attended: ${c?c.lastAppt:'[Date]'} | Days absent: ${c?dago(c.lastAppt):'[N]'}\nOutreach: [List attempts]\nRecommendation: [Outreach / Case review / Discharge]\n\nSupervisor: ${sup}`,beh:`To: Clinical Director\nRe: Behavioral Incident — ${c?c.name:'[Client]'}\nDate: ${td}\nDescription: [Describe incident]\nIntervention: [Action]\nFollow-up: [Plan]\n\nSupervisor: ${sup}`,saf:`To: Clinical Director / Crisis Team\nRe: SAFETY CONCERN — ${c?c.name:'[Client]'}\n*** URGENT *** | Date: ${td}\nIndicators: [Suicidal ideation / Self-harm / Other]\nActions: Safety plan reviewed | EC notified | Director notified\n\nSupervisor: ${sup}`,dis:`To: Clinical Director\nRe: Discharge Review — ${c?c.name:'[Client]'}\nDate: ${td}\nLast attended: ${c?c.lastAppt:'[Date]'} | Days absent: ${c?dago(c.lastAppt):'[N]'}\nOutreach: [List attempts]\nRecommendation: A) Discharge  B) Hold — deadline [Date]  C) Outreach specialist\n\nSupervisor: ${sup}`,wk:`To: Clinical Director\nRe: Weekly Summary — Week ending ${td}\nSubmitted by: ${sup}\n\nCaseload: ${clients.length} total | High: ${clients.filter(c=>rl(score(c))==='High').length} | Moderate: ${clients.filter(c=>rl(score(c))==='Moderate').length} | Compliant: ${clients.filter(c=>rl(score(c))==='Low').length}\nScreen non-compliant: ${clients.filter(c=>c.urine!=='yes').length} | Missing 2+: ${clients.filter(c=>c.att==='red').length}\nOpen behavioral: ${behav.filter(b=>b.status==='open').length}\nPeer support: ${calls.length} calls | Reached: ${calls.filter(c=>c.outcome==='Reached Client').length} | Escalated: ${calls.filter(c=>c.status==='Escalated').length}\n\nSupervisor: ${sup}`,ps:`To: Clinical Director\nRe: Peer Support Summary — Week ending ${td}\nSubmitted by: ${sup}\n\nTotal calls: ${calls.length} | Reached: ${calls.filter(c=>c.outcome==='Reached Client').length}\nNo answer/VM: ${calls.filter(c=>c.outcome==='No Answer'||c.outcome==='Left Voicemail').length}\nOpen: ${calls.filter(c=>c.status==='Open').length} | Escalated: ${calls.filter(c=>c.status==='Escalated').length}\n\nSupervisor: ${sup}`};const subj={pos:'Positive Screen — '+(c?c.name:'[Client]'),na:'Non-Attendance — '+(c?c.name:'[Client]'),beh:'Behavioral Incident — '+(c?c.name:'[Client]'),saf:'URGENT: Safety Concern — '+(c?c.name:'[Client]'),dis:'Discharge Review — '+(c?c.name:'[Client]'),wk:'Weekly Summary — '+td,ps:'Peer Support Summary — '+td};document.getElementById('esub').value=subj[type]||'';document.getElementById('ebody').value=bodies[type]||'';document.getElementById('estat').textContent='Template loaded — review before sending';}
+function sD(){sn('Draft saved.','info');}function cE(){document.getElementById('esub').value='';document.getElementById('ebody').value='';document.getElementById('estat').textContent='Cleared';}
+function sR(){const subj=document.getElementById('esub').value.trim();const body=document.getElementById('ebody').value.trim();if(!subj||!body){sn('Add subject and body.','info');return;}const ts=new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});sent.unshift({subj,ts,to:document.getElementById('eto').value});document.getElementById('sentLog').innerHTML=sent.map(r=>`<div style="padding:7px 0;border-bottom:0.5px solid var(--bdr)"><div style="font-size:12px;font-weight:700;color:var(--tx)">${r.subj}</div><div style="font-size:11px;color:var(--tx2)">Sent ${r.ts} · To: ${r.to}</div></div>`).join('');document.getElementById('estat').textContent='Sent at '+ts;sn('Report sent.','ok');}
+
+// ── ADMIN ─────────────────────────────────────────────────────────────────────
+function renderAdmin(){
+  const users=getUsers();const pins=getPins();const order={sup:0,coun:1,pss:2};
+  const sorted=[...users].sort((a,b)=>order[a.role]-order[b.role]);
+  let html='',lr='';
+  sorted.forEach(u=>{
+    if(u.role!==lr){if(lr)html+='</div>';html+=`<div class="adm-sec"><div class="adm-h">${ROLES[u.role]}s</div>`;lr=u.role;}
+    html+=`<div class="adm-row"><div class="av ${u.av}" style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0">${u.initials}</div><div style="flex:1;font-size:13px;font-weight:700;color:var(--tx)">${u.name}</div><span style="font-size:11px;color:var(--tx2);width:90px">${ROLES[u.role]}</span><input type="password" maxlength="4" inputmode="numeric" id="p_${u.id}" value="${pins[u.id]||''}" style="width:64px;font-size:14px;padding:4px 7px;letter-spacing:5px;border-radius:var(--r);border:0.5px solid var(--bdr2);background:var(--bg);color:var(--tx)"><button style="font-size:11px;padding:4px 10px;border-radius:var(--r);border:0.5px solid var(--bdri);background:var(--bgi);color:var(--txi);cursor:pointer" onclick="savePin('${u.id}')">Save</button></div>`;
+  });
+  if(lr)html+='</div>';
+  document.getElementById('adminList').innerHTML=html;
+}
+async function savePin(uid){const el=document.getElementById('p_'+uid);const val=el.value.trim();if(val.length!==4||!/^\d{4}$/.test(val)){sn('PIN must be exactly 4 digits.','info');return;}await writeDB('pins/'+uid,val);const u=getUsers().find(x=>x.id===uid);sn('PIN updated for '+(u?u.name:uid)+' — takes effect immediately.','ok');}
+async function addUser(){
+  const name=document.getElementById('nu_n').value.trim();const id=document.getElementById('nu_id').value.trim().toLowerCase().replace(/\s/g,'');
+  const role=document.getElementById('nu_r').value;const pinv=document.getElementById('nu_p').value.trim();
+  if(!name||!id||!role||pinv.length!==4||!/^\d{4}$/.test(pinv)){sn('All fields required. PIN must be 4 digits.','info');return;}
+  if(getUsers().find(u=>u.id===id)){sn('Login ID already exists.','info');return;}
+  const initials=name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  const av=role==='sup'?'av-sup':role==='pss'?'av-pss':'av-coun';
+  const newUser={id,name,role,initials,av};
+  await writeDB('users/'+id,newUser);
+  await writeDB('pins/'+id,pinv);
+  ['nu_n','nu_id','nu_p'].forEach(x=>document.getElementById(x).value='');document.getElementById('nu_r').value='';
+  sn(name+' added as '+ROLES[role]+'. They can sign in immediately.','ok');
+}
+
+// ── LOGIN ─────────────────────────────────────────────────────────────────────
+function buildUserList(){
+  const users=getUsers();const list=document.getElementById('userList');list.innerHTML='';
+  const order={sup:0,coun:1,pss:2};
+  [...users].sort((a,b)=>order[a.role]-order[b.role]).reduce((lr,u)=>{
+    if(u.role!==lr){const s=document.createElement('div');s.className='grp-lbl';s.textContent=ROLES[u.role]+'s';list.appendChild(s);}
+    const btn=document.createElement('button');btn.className='ubtn';
+    btn.innerHTML=`<div class="av ${u.av}">${u.initials}</div><div><div class="uname">${u.name}</div><div class="urole">${ROLES[u.role]}</div></div>`;
+    btn.onclick=()=>selU(u);list.appendChild(btn);return u.role;
+  },'');
+}
+function selU(u){selUser=u;pin='';document.getElementById('step1').classList.remove('active');document.getElementById('step2').classList.add('active');document.getElementById('pinName').textContent=u.name;document.getElementById('pinRole').textContent=ROLES[u.role];document.getElementById('perr').textContent='';updDots();}
+function goBack(){document.getElementById('step2').classList.remove('active');document.getElementById('step1').classList.add('active');selUser=null;pin='';}
+function updDots(){for(let i=0;i<4;i++){const d=document.getElementById('pd'+i);d.classList.toggle('on',i<pin.length);d.classList.remove('err');}}
+function pk(k){if(pin.length>=4)return;pin+=k;updDots();document.getElementById('perr').textContent='';if(pin.length===4)setTimeout(chkPin,120);}
+function pdel(){if(pin.length>0){pin=pin.slice(0,-1);updDots();}}
+function chkPin(){const pins=getPins();if(pin===pins[selUser.id]){doLogin();}else{for(let i=0;i<4;i++)document.getElementById('pd'+i).classList.add('err');document.getElementById('perr').textContent='Incorrect PIN. Please try again.';setTimeout(()=>{pin='';updDots();},900);}}
+function doLogin(){curUser=selUser;document.getElementById('loginScreen').style.display='none';document.getElementById('dash').style.display='block';applyRole();renderAll();sn('Welcome, '+curUser.name+'!','ok');}
+function logout(){curUser=null;selUser=null;pin='';document.getElementById('dash').style.display='none';document.getElementById('loginScreen').style.display='flex';document.getElementById('step2').classList.remove('active');document.getElementById('step1').classList.add('active');}
+function applyRole(){
+  const r=curUser.role;
+  const rb=document.getElementById('rbadge');rb.textContent=ROLES[r];rb.className='rbadge '+(r==='sup'?'rb-sup':r==='pss'?'rb-pss':'rb-coun');
+  const av=document.getElementById('topAv');av.className='av '+curUser.av;av.textContent=curUser.initials;
+  document.getElementById('topName').textContent=curUser.name;
+  document.getElementById('nRpt').style.display=r==='sup'?'':'none';
+  document.getElementById('nAdm').style.display=r==='sup'?'':'none';
+  document.getElementById('nPSS').style.display=r==='pss'?'':'none';
+  document.getElementById('nAdd').style.display=r==='pss'?'none':'';
+  document.getElementById('nAtt').style.display=r==='pss'?'none':'';
+  document.getElementById('nBeh').style.display=r==='pss'?'none':'';
+  document.getElementById('fC').style.display=r==='sup'?'':'none';
+}
+
+// ── BOOT ──────────────────────────────────────────────────────────────────────
+['ad','bd','pdate','fa2'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=todayISO;});
+initData();
+
+// Make functions available globally
+window.goBack=goBack;window.pk=pk;window.pdel=pdel;
+window.showSec=showSec;window.showSP=showSP;
+window.saveClient=saveClient;window.clearCF=clearCF;window.editC=editC;window.delC=delC;
+window.logAtt=logAtt;window.logBeh=logBeh;window.resB=resB;
+window.saveCall=saveCall;window.clearP=clearP;
+window.renderClients=renderClients;window.renderPLog=renderPLog;
+window.loadFC=loadFC;window.loadRpt=loadRpt;window.sD=sD;window.sR=sR;window.cE=cE;
+window.renderAdmin=renderAdmin;window.savePin=savePin;window.addUser=addUser;
+window.logout=logout;
+</script>
+</body>
+</html>
